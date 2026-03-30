@@ -1,0 +1,110 @@
+{
+  "theme": "dark",
+  "archetype": "Archetype 4 (Swiss & High-Contrast) adapted for Retro Gaming",
+  "emotional_tone": "Tactical, nostalgic, immersive",
+  "colors": {
+    "background": "#0A0A0C",
+    "surface": "#141417",
+    "surface_hover": "#1A1A1E",
+    "border": "#27272A",
+    "border_focus": "#10B981",
+    "primary": "#10B981",
+    "primary_hover": "#059669",
+    "secondary": "#E11D48",
+    "hp_green": "#4ADE80",
+    "hp_yellow": "#FBBF24",
+    "hp_red": "#F87171",
+    "status_prz": "#FCD34D",
+    "status_psn": "#A78BFA",
+    "status_slp": "#9CA3AF",
+    "status_brn": "#FCA5A5",
+    "status_fnt": "#EF4444",
+    "text_primary": "#F9FAFB",
+    "text_secondary": "#9CA3AF",
+    "text_accent": "#10B981"
+  },
+  "typography": {
+    "fonts": {
+      "headings": "Outfit",
+      "body": "IBM Plex Sans",
+      "mono": "JetBrains Mono"
+    },
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl font-black tracking-tighter text-white",
+      "h2": "text-2xl sm:text-3xl font-bold tracking-tight text-white",
+      "h3": "text-xl font-semibold text-gray-100",
+      "body": "text-base font-normal text-gray-400",
+      "small": "text-sm text-gray-500",
+      "overline": "text-xs font-bold uppercase tracking-[0.2em] text-gray-500",
+      "hp_numbers": "font-mono text-sm tracking-tight text-white"
+    }
+  },
+  "spacing_and_layout": {
+    "grid_strategy": "The 'Control Room' Grid (Base: grid-cols-1 md:grid-cols-3 lg:grid-cols-4) with tight gap-4 or gap-6 for Nuzlocke Dashboard. Generous spacing (py-24) for Hero.",
+    "container_padding": "p-6 or p-8 for cards with borders.",
+    "radius": "rounded-lg",
+    "shadows": {
+      "surface": "shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
+      "glow": "drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+    }
+  },
+  "surfaces": {
+    "header": "Glassmorphism: backdrop-blur-xl bg-[#0A0A0C]/80 border-b border-white/5",
+    "cards": "Solid flat background bg-[#141417] with 1px border-white/5",
+    "emulator_container": "Solid black bg-black border border-[#27272A] hover:border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.05)] transition-all"
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-emerald-600 text-white font-medium px-6 py-2 rounded-md hover:bg-emerald-500 transition-colors focus:ring-2 focus:ring-emerald-400",
+      "secondary": "bg-transparent border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 transition-colors px-6 py-2 rounded-md",
+      "danger": "bg-red-600 text-white hover:bg-red-500 rounded-md"
+    },
+    "hp_bar": {
+      "container": "h-2 w-full bg-gray-800 rounded-full overflow-hidden border border-gray-900",
+      "fill": "h-full transition-all duration-300 ease-in-out"
+    },
+    "status_badge": "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
+    "encounter_card": "bg-[#141417] p-4 rounded-lg border border-white/5 flex items-center justify-between hover:border-white/10 transition-colors"
+  },
+  "media": {
+    "image_urls": [
+      {
+        "url": "https://images.unsplash.com/photo-1767472718833-3101a9a21b37?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzR8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGVtZXJhbGQlMjBncmVlbiUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3NDkwOTYzMXww&ixlib=rb-4.1.0&q=85",
+        "category": "hero_background",
+        "description": "Abstract swirling green and black patterns for the landing page hero section. Use with bg-[#0A0A0C]/80 overlay for readability."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1696621629216-dfed30d4427d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NjZ8MHwxfHNlYXJjaHwxfHxnYW1lYm95JTIwY29uc29sZSUyMHJldHJvfGVufDB8fHx8MTc3NDkwOTYxN3ww&ixlib=rb-4.1.0&q=85",
+        "category": "featured_emulator",
+        "description": "Close up of a retro gameboy on a table for the featured emulator/library section."
+      },
+      {
+        "url": "https://images.pexels.com/photos/32075199/pexels-photo-32075199.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "recent_rom",
+        "description": "Gameboy Advance SP image for library or recent ROM placeholders."
+      }
+    ],
+    "icons": {
+      "library": "lucide-react"
+    }
+  },
+  "interactions_and_motion": {
+    "hover": "Subtle translation (-translate-y-0.5) and border highlight for interactive cards.",
+    "buttons": "Active scale down (active:scale-95).",
+    "menus": "Use radix UI primitives via shadcn for accessible focus and keyboard navigation."
+  },
+  "accessibility": {
+    "contrast": "Ensure HP/Status colors pass contrast checks against dark backgrounds.",
+    "attributes": "All interactive elements MUST have data-testid attributes (e.g., data-testid='upload-rom-btn')."
+  },
+  "instructions_to_main_agent": [
+    "Use standard HTML + Tailwind for unique Nuzlocke tracker layouts (e.g., HP bars, Party layout). Do NOT force Shadcn cards if they constrain the layout.",
+    "Implement Shadcn for functional elements like dialogs, tabs (Run history), selects (Platform/Core).",
+    "Ensure the Play Page emphasizes the Emulator canvas using a deep black container with a subtle green glow when active.",
+    "Create a Pokemon-style HP bar component with green/yellow/red logic based on percentage.",
+    "Use Outfit for headers, IBM Plex Sans for body, and JetBrains Mono for stats/HP numbers.",
+    "Follow the defined dark theme strictly, avoiding pure white except for highest emphasis text.",
+    "Include 'data-testid' attributes on all key interactive elements.",
+    "Add lucide-react, @fontsource/outfit, @fontsource/ibm-plex-sans, @fontsource/jetbrains-mono."
+  ]
+}
