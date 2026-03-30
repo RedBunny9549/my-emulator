@@ -1,53 +1,44 @@
-import { useEffect } from "react";
-import "@/App.css";
+import { useState, createContext, useContext } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import "@/App.css";
+import HomePage from "./components/HomePage";
+import PlayPage from "./components/PlayPage";
+import NuzlockeList from "./components/NuzlockeList";
+import NuzlockeRunPage from "./components/NuzlockeRunPage";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+export const EmuContext = createContext(null);
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
+export function useEmu() {
+  return useContext(EmuContext);
+}
 
 function App() {
+  const [romFile, setRomFile] = useState(null);
+  const [biosFile, setBiosFile] = useState(null);
+  const [gameTitle, setGameTitle] = useState("");
+  const [coreType, setCoreType] = useState("gba");
+
+  const loadRom = (file) => {
+    const ext = file.name.toLowerCase().split(".").pop();
+    const core = ext === "gba" ? "gba" : ext === "gbc" ? "gbc" : "gb";
+    setRomFile(file);
+    setCoreType(core);
+    setGameTitle(file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " "));
+  };
+
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <EmuContext.Provider value={{ romFile, biosFile, setBiosFile, gameTitle, coreType, loadRom }}>
+      <div className="App">
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/play" element={<PlayPage />} />
+            <Route path="/nuzlocke" element={<NuzlockeList />} />
+            <Route path="/nuzlocke/:runId" element={<NuzlockeRunPage />} />
+          </Routes>
+        </BrowserRouter>
+      </div>
+    </EmuContext.Provider>
   );
 }
 
