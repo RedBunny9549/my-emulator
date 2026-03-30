@@ -5,6 +5,7 @@ import axios from "axios";
 import Navbar from "./Navbar";
 import HpBar from "./HpBar";
 import PokemonSprite from "./PokemonSprite";
+import RouteTracker from "./RouteTracker";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -202,6 +203,9 @@ export default function NuzlockeRunPage() {
           ))}
         </div>
 
+        {/* Route Tracker */}
+        <RouteTracker encounters={encounters} runId={runId} onUpdate={fetchData} />
+
         {/* Party */}
         <div className="mb-8">
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-3">Active Party</h2>
@@ -303,11 +307,17 @@ export default function NuzlockeRunPage() {
                             />
                           ) : (
                             <div>
-                              <span className="text-white font-medium">{enc.nickname || enc.pokemon}</span>
-                              {enc.nickname && (
-                                <span className="text-gray-600 text-xs ml-1">({enc.pokemon})</span>
+                              {enc.pokemon === "—" ? (
+                                <span className="text-gray-600 italic text-xs">No Pokemon</span>
+                              ) : (
+                                <>
+                                  <span className="text-white font-medium">{enc.nickname || enc.pokemon}</span>
+                                  {enc.nickname && (
+                                    <span className="text-gray-600 text-xs ml-1">({enc.pokemon})</span>
+                                  )}
+                                  {enc.is_starter && <span className="ml-1 text-yellow-500 text-xs">★</span>}
+                                </>
                               )}
-                              {enc.is_starter && <span className="ml-1 text-yellow-500 text-xs">★</span>}
                             </div>
                           )}
                         </td>

@@ -21,14 +21,20 @@ Pokemon fans, Nuzlocke runners, retro gaming enthusiasts, Radical Red / ROM hack
 ## What's Been Implemented (Feb 2026)
 
 ### Frontend Pages
-- **/** — Landing page: hero ROM drop zone, platform cards (GB/GBC/GBA), feature cards, Nuzlocke CTA
-- **/play** — Emulator page: EmulatorJS canvas, controls reference, BIOS upload (optional for GBA), Nuzlocke shortcut
-- **/library** — ROM Library: recently played ROMs with play counts, last-played date, file size, platform badges
+- **/** → redirects to /play (no promo/home page)
+- **/play** — Emulator: EmulatorJS canvas, auto-loaded GBA BIOS, controls reference, BIOS override upload
+- **/library** — ROM Library: recently played ROMs with play counts, date, platform stats
 - **/nuzlocke** — Run list: create/delete runs, progress bar, encounter counts
-- **/nuzlocke/:runId** — Run detail: party with PokeAPI sprites + type badges, encounter table, quick actions, run status management
+- **/nuzlocke/:runId** — Run detail: Route Tracker + party with PokeAPI sprites + type badges + encounter table
+
+### Key Components
+- **Navbar**: Minimal 3-tab nav (Play / Library / Nuzlocke) + Load ROM button, no branding text
+- **Emulator**: Auto-loads GBA BIOS from uploaded URL, suppresses cross-origin Script errors
+- **RouteTracker**: Groups encounters by route, shows Cleared/Lost/Missed, + Missed Route quick-log
+- **PokemonSprite**: PokeAPI sprites + 18-type color badges, module-level session cache
 
 ### Navbar
-4 tabs: Home · Play · Library · Nuzlocke + Load ROM button
+3 tabs: Play · Library · Nuzlocke + Load ROM button
 
 ### Backend APIs
 - `GET /api/nuzlocke/runs` — List all runs with encounter counts

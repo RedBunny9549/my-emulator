@@ -169,9 +169,9 @@ export default function PlayPage() {
               <p className="text-gray-600 text-xs mt-0.5 font-mono">{coreInfo.specs}</p>
 
               {coreType === "gba" && !biosFile && (
-                <div className="mt-3 p-2.5 bg-yellow-500/5 border border-yellow-500/15 rounded-lg">
-                  <p className="text-yellow-600 text-[11px] leading-relaxed">
-                    Most games work without a BIOS. For best compatibility, optionally provide a GBA BIOS file.
+                <div className="mt-3 p-2.5 bg-emerald-500/5 border border-emerald-500/15 rounded-lg">
+                  <p className="text-emerald-600 text-[11px] leading-relaxed">
+                    GBA BIOS auto-loaded for best compatibility.
                   </p>
                 </div>
               )}
