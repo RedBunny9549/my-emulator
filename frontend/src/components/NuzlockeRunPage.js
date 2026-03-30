@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Skull, Box, Minus, Edit3, Trash2, Check, X } from "lucide-react";
+import { ArrowLeft, Plus, Skull, Box, Minus, Edit3, Trash2, Check, X, Info } from "lucide-react";
 import axios from "axios";
 import Navbar from "./Navbar";
 import HpBar from "./HpBar";
 import PokemonSprite from "./PokemonSprite";
 import RouteTracker from "./RouteTracker";
+import PokemonDetailsModal from "./PokemonDetailsModal";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -39,6 +40,7 @@ export default function NuzlockeRunPage() {
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [selectedPokemon, setSelectedPokemon] = useState(null); // for detail modal
 
   const fetchData = useCallback(async () => {
     try {
@@ -219,8 +221,12 @@ export default function NuzlockeRunPage() {
                 <div
                   key={enc.id}
                   data-testid={`party-slot-${enc.id}`}
-                  className="bg-[#141417] border border-emerald-500/20 rounded-xl p-3 text-center hover:border-emerald-500/40 transition-colors"
+                  onClick={() => setSelectedPokemon(enc)}
+                  className="bg-[#141417] border border-emerald-500/20 rounded-xl p-3 text-center hover:border-emerald-500/40 hover:-translate-y-0.5 transition-all cursor-pointer group relative"
                 >
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Info className="w-3 h-3 text-emerald-400/60" />
+                  </div>
                   <PokemonSprite name={enc.pokemon} size={52} showTypes={true} />
                   <p className="text-white font-semibold text-xs truncate mt-2">{enc.nickname || enc.pokemon}</p>
                   {enc.nickname && (
@@ -574,6 +580,16 @@ export default function NuzlockeRunPage() {
             </form>
           </div>
         </div>
+      )}
+      {/* Pokemon Detail Modal */}
+      {selectedPokemon && (
+        <PokemonDetailsModal
+          name={selectedPokemon.pokemon}
+          nickname={selectedPokemon.nickname}
+          level={selectedPokemon.level}
+          hp_percent={selectedPokemon.hp_percent}
+          onClose={() => setSelectedPokemon(null)}
+        />
       )}
     </div>
   );
