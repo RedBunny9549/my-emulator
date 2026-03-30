@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Gamepad2, Trophy, Home, Upload } from "lucide-react";
+import { Gamepad2, Trophy, Home, Upload, Library } from "lucide-react";
 import { useRef } from "react";
 import { useEmu } from "../App";
 
@@ -19,9 +19,10 @@ export default function Navbar() {
   };
 
   const links = [
-    { to: "/", icon: Home, label: "Home" },
-    { to: "/play", icon: Gamepad2, label: "Play" },
-    { to: "/nuzlocke", icon: Trophy, label: "Nuzlocke" },
+    { to: "/",         icon: Home,     label: "Home"     },
+    { to: "/play",     icon: Gamepad2, label: "Play"     },
+    { to: "/library",  icon: Library,  label: "Library"  },
+    { to: "/nuzlocke", icon: Trophy,   label: "Nuzlocke" },
   ];
 
   return (

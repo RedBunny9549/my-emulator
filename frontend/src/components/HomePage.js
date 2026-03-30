@@ -53,12 +53,6 @@ export default function HomePage() {
         return;
       }
       loadRom(file);
-      try {
-        const recent = JSON.parse(localStorage.getItem("recent_roms") || "[]");
-        const entry = { name: file.name, size: file.size, lastPlayed: Date.now(), core: ext };
-        const filtered = recent.filter((r) => r.name !== file.name);
-        localStorage.setItem("recent_roms", JSON.stringify([entry, ...filtered].slice(0, 5)));
-      } catch (_) {}
       navigate("/play");
     },
     [loadRom, navigate]

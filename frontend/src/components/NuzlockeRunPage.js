@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Heart, Skull, Box, Minus, Edit3, Trash2, Check, X } from "lucide-react";
+import { ArrowLeft, Plus, Skull, Box, Minus, Edit3, Trash2, Check, X } from "lucide-react";
 import axios from "axios";
 import Navbar from "./Navbar";
 import HpBar from "./HpBar";
+import PokemonSprite from "./PokemonSprite";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -214,12 +215,10 @@ export default function NuzlockeRunPage() {
                 <div
                   key={enc.id}
                   data-testid={`party-slot-${enc.id}`}
-                  className="bg-[#141417] border border-emerald-500/20 rounded-xl p-3 text-center"
+                  className="bg-[#141417] border border-emerald-500/20 rounded-xl p-3 text-center hover:border-emerald-500/40 transition-colors"
                 >
-                  <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <Heart className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <p className="text-white font-semibold text-xs truncate">{enc.nickname || enc.pokemon}</p>
+                  <PokemonSprite name={enc.pokemon} size={52} showTypes={true} />
+                  <p className="text-white font-semibold text-xs truncate mt-2">{enc.nickname || enc.pokemon}</p>
                   {enc.nickname && (
                     <p className="text-gray-600 text-[10px] truncate">{enc.pokemon}</p>
                   )}
@@ -233,8 +232,8 @@ export default function NuzlockeRunPage() {
               {Array.from({ length: Math.max(0, 6 - party.length) }).map((_, i) => (
                 <div
                   key={`empty-${i}`}
-                  className="bg-[#141417] border border-white/5 rounded-xl p-3 flex items-center justify-center opacity-40"
-                  style={{ minHeight: "130px" }}
+                  className="bg-[#141417] border border-white/5 rounded-xl p-3 flex items-center justify-center opacity-30"
+                  style={{ minHeight: "150px" }}
                 >
                   <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center">
                     <Minus className="w-4 h-4 text-gray-700" />

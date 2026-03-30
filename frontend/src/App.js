@@ -5,6 +5,7 @@ import HomePage from "./components/HomePage";
 import PlayPage from "./components/PlayPage";
 import NuzlockeList from "./components/NuzlockeList";
 import NuzlockeRunPage from "./components/NuzlockeRunPage";
+import LibraryPage from "./components/LibraryPage";
 
 export const EmuContext = createContext(null);
 
@@ -24,6 +25,20 @@ function App() {
     setRomFile(file);
     setCoreType(core);
     setGameTitle(file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " "));
+    // Update play library in localStorage
+    try {
+      const stored = JSON.parse(localStorage.getItem("recent_roms") || "[]");
+      const existing = stored.find((r) => r.name === file.name);
+      const entry = {
+        name: file.name,
+        size: file.size,
+        lastPlayed: Date.now(),
+        core,
+        playCount: existing ? (existing.playCount || 1) + 1 : 1,
+      };
+      const filtered = stored.filter((r) => r.name !== file.name);
+      localStorage.setItem("recent_roms", JSON.stringify([entry, ...filtered].slice(0, 10)));
+    } catch (_) {}
   };
 
   return (
@@ -33,6 +48,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/play" element={<PlayPage />} />
+            <Route path="/library" element={<LibraryPage />} />
             <Route path="/nuzlocke" element={<NuzlockeList />} />
             <Route path="/nuzlocke/:runId" element={<NuzlockeRunPage />} />
           </Routes>
