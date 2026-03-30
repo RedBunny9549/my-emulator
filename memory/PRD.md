@@ -23,8 +23,12 @@ Pokemon fans, Nuzlocke runners, retro gaming enthusiasts, Radical Red / ROM hack
 ### Frontend Pages
 - **/** — Landing page: hero ROM drop zone, platform cards (GB/GBC/GBA), feature cards, Nuzlocke CTA
 - **/play** — Emulator page: EmulatorJS canvas, controls reference, BIOS upload (optional for GBA), Nuzlocke shortcut
+- **/library** — ROM Library: recently played ROMs with play counts, last-played date, file size, platform badges
 - **/nuzlocke** — Run list: create/delete runs, progress bar, encounter counts
-- **/nuzlocke/:runId** — Run detail: party display, encounter table, quick actions (faint/box/edit), run status management
+- **/nuzlocke/:runId** — Run detail: party with PokeAPI sprites + type badges, encounter table, quick actions, run status management
+
+### Navbar
+4 tabs: Home · Play · Library · Nuzlocke + Load ROM button
 
 ### Backend APIs
 - `GET /api/nuzlocke/runs` — List all runs with encounter counts
