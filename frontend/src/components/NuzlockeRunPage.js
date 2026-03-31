@@ -419,6 +419,16 @@ export default function NuzlockeRunPage() {
                                     <Box className="w-3.5 h-3.5" />
                                   </button>
                                 )}
+                                {enc.pokemon !== "—" && (
+                                  <button
+                                    onClick={() => setSelectedPokemon(enc)}
+                                    data-testid={`info-btn-${enc.id}`}
+                                    title="Smart HUD"
+                                    className="text-gray-600 hover:text-emerald-400 p-1.5 rounded hover:bg-emerald-500/10 transition-colors"
+                                  >
+                                    <Info className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => {
                                     setEditId(enc.id);
