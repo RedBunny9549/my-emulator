@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Gamepad2, Trophy, Library, Upload, BookOpen } from "lucide-react";
+import { Gamepad2, Trophy, Library, Upload, BookOpen, Map } from "lucide-react";
 import { useRef } from "react";
 import { useEmu } from "../App";
 
@@ -19,12 +19,14 @@ export default function Navbar() {
     { to: "/play",     icon: Gamepad2, label: "Play"     },
     { to: "/library",  icon: Library,  label: "Library"  },
     { to: "/nuzlocke", icon: Trophy,   label: "Nuzlocke" },
+    { to: "/routes",   icon: Map,      label: "Routes"   },
     { to: "/bosses",   icon: BookOpen, label: "Bosses"   },
   ];
 
   const isActive = (to) => {
     if (to === "/nuzlocke") return location.pathname.startsWith("/nuzlocke");
     if (to === "/bosses")   return location.pathname.startsWith("/bosses");
+    if (to === "/routes")   return location.pathname.startsWith("/routes");
     return location.pathname === to;
   };
 
