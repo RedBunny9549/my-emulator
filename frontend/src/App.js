@@ -5,6 +5,7 @@ import PlayPage from "./components/PlayPage";
 import NuzlockeList from "./components/NuzlockeList";
 import NuzlockeRunPage from "./components/NuzlockeRunPage";
 import LibraryPage from "./components/LibraryPage";
+import BossGuide from "./components/BossGuide";
 
 export const EmuContext = createContext(null);
 export function useEmu() { return useContext(EmuContext); }
@@ -40,6 +41,7 @@ function App() {
             <Route path="/library" element={<LibraryPage />} />
             <Route path="/nuzlocke" element={<NuzlockeList />} />
             <Route path="/nuzlocke/:runId" element={<NuzlockeRunPage />} />
+            <Route path="/bosses" element={<BossGuide />} />
           </Routes>
         </BrowserRouter>
       </div>

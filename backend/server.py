@@ -52,6 +52,7 @@ class Encounter(BaseModel):
     hp_percent: int = 100
     is_starter: bool = False
     notes: Optional[str] = None
+    moves: Optional[List[str]] = []
     caught_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class EncounterCreate(BaseModel):
@@ -63,6 +64,7 @@ class EncounterCreate(BaseModel):
     hp_percent: int = 100
     is_starter: bool = False
     notes: Optional[str] = None
+    moves: Optional[List[str]] = []
 
 class EncounterUpdate(BaseModel):
     status: Optional[str] = None
@@ -70,6 +72,7 @@ class EncounterUpdate(BaseModel):
     level: Optional[int] = None
     hp_percent: Optional[int] = None
     notes: Optional[str] = None
+    moves: Optional[List[str]] = None
 
 # --- Routes ---
 @api_router.get("/")

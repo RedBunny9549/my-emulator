@@ -27,6 +27,7 @@ const RUN_STATUS_CFG = {
 const EMPTY_FORM = {
   location: "", pokemon: "", nickname: "", level: 5,
   status: "alive", hp_percent: 100, is_starter: false, notes: "",
+  moves: ["", "", "", ""],
 };
 
 export default function NuzlockeRunPage() {
@@ -68,6 +69,7 @@ export default function NuzlockeRunPage() {
         ...form,
         level: Number(form.level),
         hp_percent: Number(form.hp_percent),
+        moves: (form.moves || []).filter(Boolean),
       });
       setShowAdd(false);
       setForm(EMPTY_FORM);
@@ -206,7 +208,7 @@ export default function NuzlockeRunPage() {
         </div>
 
         {/* Route Tracker */}
-        <RouteTracker encounters={encounters} runId={runId} onUpdate={fetchData} />
+        <RouteTracker encounters={encounters} runId={runId} onUpdate={fetchData} game={run.game} />
 
         {/* Party */}
         <div className="mb-8">
@@ -549,6 +551,25 @@ export default function NuzlockeRunPage() {
                 </label>
               </div>
               <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Moves (optional)</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[0, 1, 2, 3].map((i) => (
+                    <input
+                      key={i}
+                      value={form.moves?.[i] || ""}
+                      onChange={(e) => {
+                        const updated = [...(form.moves || ["","","",""])];
+                        updated[i] = e.target.value;
+                        setForm({ ...form, moves: updated });
+                      }}
+                      placeholder={`Move ${i + 1}`}
+                      data-testid={`enc-move-${i}-input`}
+                      className="w-full bg-[#0A0A0C] border border-gray-700 focus:border-emerald-500 text-white placeholder-gray-600 text-xs px-3 py-2 rounded-lg outline-none transition-colors"
+                    />
+                  ))}
+                </div>
+              </div>
+              <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Notes</label>
                 <textarea
                   value={form.notes}
@@ -588,6 +609,7 @@ export default function NuzlockeRunPage() {
           nickname={selectedPokemon.nickname}
           level={selectedPokemon.level}
           hp_percent={selectedPokemon.hp_percent}
+          moves={selectedPokemon.moves || []}
           onClose={() => setSelectedPokemon(null)}
         />
       )}

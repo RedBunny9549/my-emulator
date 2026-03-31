@@ -80,6 +80,24 @@ class TestEncounters:
         assert data["run_id"] == TestNuzlockeRuns.run_id
         TestEncounters.encounter_id = data["id"]
 
+    def test_add_encounter_with_moves(self):
+        """Test that moves field is accepted and persisted"""
+        assert TestNuzlockeRuns.run_id
+        r = requests.post(f"{BASE_URL}/api/nuzlocke/runs/{TestNuzlockeRuns.run_id}/encounters", json={
+            "location": "Route 103",
+            "pokemon": "Zigzagoon",
+            "level": 3,
+            "status": "alive",
+            "hp_percent": 100,
+            "moves": ["Tackle", "Growl", "Tail Whip", ""]
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["pokemon"] == "Zigzagoon"
+        assert "moves" in data
+        assert "Tackle" in data["moves"]
+        assert "Growl" in data["moves"]
+
     def test_update_encounter_faint(self):
         assert TestEncounters.encounter_id
         r = requests.put(f"{BASE_URL}/api/nuzlocke/encounters/{TestEncounters.encounter_id}", json={"status": "dead", "hp_percent": 0})

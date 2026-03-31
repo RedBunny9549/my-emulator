@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { MapPin, CheckCircle, XCircle, AlertCircle, Plus, X, ChevronDown, ChevronUp, Circle } from "lucide-react";
+import { MapPin, CheckCircle, XCircle, AlertCircle, Plus, X, ChevronDown, ChevronUp } from "lucide-react";
 import axios from "axios";
+import { getEncounterSuggestions } from "../data/encounterTables";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -12,7 +13,7 @@ const ROUTE_STATUS = {
   escaped: { icon: AlertCircle,  color: "text-orange-400",  bg: "bg-orange-500/10 border-orange-500/20",   label: "Escaped" },
 };
 
-export default function RouteTracker({ encounters, runId, onUpdate }) {
+export default function RouteTracker({ encounters, runId, onUpdate, game }) {
   const [collapsed, setCollapsed]           = useState(false);
   const [showForm, setShowForm]             = useState(false);
   const [missedLocation, setMissedLocation] = useState("");
@@ -168,6 +169,15 @@ export default function RouteTracker({ encounters, runId, onUpdate }) {
                           {extra > 0 && <span className="text-gray-700 ml-1">+{extra}</span>}
                         </p>
                       )}
+                      {(() => {
+                        const suggestions = getEncounterSuggestions(game, location);
+                        if (!suggestions) return null;
+                        return (
+                          <p className="text-gray-700 text-[10px] truncate mt-0.5">
+                            Possible: {suggestions.slice(0, 5).join(", ")}{suggestions.length > 5 ? "…" : ""}
+                          </p>
+                        );
+                      })()}
                     </div>
                     <span
                       className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border flex-shrink-0 ${sc.bg} ${sc.color}`}
