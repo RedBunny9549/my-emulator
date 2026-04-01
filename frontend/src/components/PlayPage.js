@@ -1,57 +1,132 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, Cpu, Gamepad2, Trophy, FileUp, Info, ChevronDown } from "lucide-react";
+import { Upload, Cpu, Gamepad2, Trophy, FileUp, Info, RefreshCw } from "lucide-react";
 import Navbar from "./Navbar";
 import Emulator from "./Emulator";
 import { useEmu } from "../App";
 
-const CONTROLS = [
+// Default controls shown before EmulatorJS loads
+const DEFAULT_CONTROLS = [
   { key: "Arrow Keys", action: "D-Pad" },
-  { key: "Z", action: "A Button" },
-  { key: "X", action: "B Button" },
-  { key: "A", action: "L Button" },
-  { key: "S", action: "R Button" },
-  { key: "Enter", action: "Start" },
-  { key: "Shift", action: "Select" },
-  { key: "F1", action: "Quick Save" },
-  { key: "F2", action: "Quick Load" },
+  { key: "Z",         action: "A Button" },
+  { key: "X",         action: "B Button" },
+  { key: "A",         action: "L Button" },
+  { key: "S",         action: "R Button" },
+  { key: "Enter",     action: "Start" },
+  { key: "Shift",     action: "Select" },
+  { key: "F1",        action: "Quick Save" },
+  { key: "F2",        action: "Quick Load" },
 ];
 
+// EmulatorJS stores key bindings in localStorage under these keys
+// Maps EJS internal action name → display label
+const EJS_KEY_MAP = {
+  "0":  "D-Pad Up",
+  "1":  "D-Pad Down",
+  "2":  "D-Pad Left",
+  "3":  "D-Pad Right",
+  "4":  "B Button",
+  "5":  "A Button",
+  "6":  "X Button",
+  "7":  "Y Button",
+  "8":  "Select",
+  "9":  "Start",
+  "10": "L Button",
+  "11": "R Button",
+};
+
+function readEJSControls() {
+  try {
+    // EmulatorJS saves controls like "EmulatorJS-keys-{core}" or similar
+    // Check common localStorage keys it uses
+    const keys = Object.keys(localStorage).filter(k =>
+      k.toLowerCase().includes("emulator") || k.toLowerCase().includes("ejs")
+    );
+    for (const k of keys) {
+      if (k.toLowerCase().includes("key") || k.toLowerCase().includes("control")) {
+        const val = localStorage.getItem(k);
+        if (val) {
+          const parsed = JSON.parse(val);
+          if (typeof parsed === "object") return parsed;
+        }
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
 const CORE_INFO = {
-  gba: { label: "Game Boy Advance", specs: "ARM7TDMI · 16.78 MHz · 32-bit", color: "text-pink-400" },
-  gbc: { label: "Game Boy Color", specs: "Sharp LR35902 · 8.39 MHz · 8-bit", color: "text-blue-400" },
-  gb:  { label: "Game Boy", specs: "Sharp LR35902 · 4.19 MHz · 8-bit", color: "text-emerald-400" },
+  gba:      { label: "Game Boy Advance",  specs: "ARM7TDMI · 16.78 MHz · 32-bit",    color: "text-pink-400"    },
+  gbc:      { label: "Game Boy Color",    specs: "Sharp LR35902 · 8.39 MHz · 8-bit",  color: "text-blue-400"    },
+  gb:       { label: "Game Boy",          specs: "Sharp LR35902 · 4.19 MHz · 8-bit",  color: "text-emerald-400" },
+  gambatte: { label: "Game Boy / Color",  specs: "Gambatte core · GB + GBC",          color: "text-blue-400"    },
 };
 
 export default function PlayPage() {
   const navigate = useNavigate();
   const { romFile, biosFile, setBiosFile, gameTitle, coreType, loadRom } = useEmu();
   const [emuKey, setEmuKey] = useState(0);
+  const [controls, setControls] = useState(DEFAULT_CONTROLS);
+  const [ejsReady, setEjsReady] = useState(false);
   const romRef = useRef(null);
   const biosRef = useRef(null);
 
-  const handleRomChange = useCallback(
-    (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        loadRom(file);
-        setEmuKey((k) => k + 1);
+  // Listen for EmulatorJS ready event fired from Emulator.js
+  useEffect(() => {
+    const onReady = () => {
+      setEjsReady(true);
+      refreshControls();
+    };
+    window.addEventListener("ejs-ready", onReady);
+
+    // Also poll localStorage for control changes every 2s while playing
+    const interval = setInterval(() => {
+      if (ejsReady) refreshControls();
+    }, 2000);
+
+    // Listen for storage changes (when user remaps in settings)
+    const onStorage = (e) => {
+      if (e.key && (e.key.toLowerCase().includes("emulator") || e.key.toLowerCase().includes("ejs"))) {
+        refreshControls();
       }
-      e.target.value = "";
-    },
-    [loadRom]
-  );
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("ejs-ready", onReady);
+      window.removeEventListener("storage", onStorage);
+      clearInterval(interval);
+    };
+  }, [ejsReady]);
+
+  const refreshControls = () => {
+    const ejsControls = readEJSControls();
+    if (!ejsControls) return;
+    // Try to build a readable control list from whatever EJS stored
+    const built = [];
+    for (const [k, v] of Object.entries(ejsControls)) {
+      const label = EJS_KEY_MAP[k] || k;
+      const keyName = typeof v === "string" ? v : JSON.stringify(v);
+      if (keyName && label) built.push({ key: keyName, action: label });
+    }
+    if (built.length > 0) setControls(built);
+  };
+
+  const handleRomChange = useCallback((e) => {
+    const file = e.target.files[0];
+    if (file) { loadRom(file); setEmuKey(k => k + 1); setEjsReady(false); setControls(DEFAULT_CONTROLS); }
+    e.target.value = "";
+  }, [loadRom]);
 
   const handleBiosChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setBiosFile(file);
-      setEmuKey((k) => k + 1);
-    }
+    if (file) { setBiosFile(file); setEmuKey(k => k + 1); }
     e.target.value = "";
   };
 
-  const coreInfo = CORE_INFO[coreType] || CORE_INFO.gba;
+  // Resolve display core — gambatte covers gb + gbc
+  const displayCore = coreType === "gb" || coreType === "gbc" ? "gambatte" : coreType;
+  const coreInfo = CORE_INFO[displayCore] || CORE_INFO[coreType] || CORE_INFO.gba;
 
   if (!romFile) {
     return (
@@ -65,14 +140,12 @@ export default function PlayPage() {
           <p className="text-gray-500 mb-8 text-center max-w-xs">
             Upload a .gb, .gbc, or .gba ROM file to start playing in your browser
           </p>
-          <input ref={romRef} type="file" accept=".gb,.gbc,.gba" className="hidden" onChange={handleRomChange} data-testid="play-empty-input" />
+          <input ref={romRef} type="file" accept=".gb,.gbc,.gba" className="hidden" onChange={handleRomChange} />
           <button
             onClick={() => romRef.current?.click()}
-            data-testid="upload-rom-btn"
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-6 py-3 rounded-lg font-semibold transition-all"
           >
-            <Upload className="w-5 h-5" />
-            Load ROM File
+            <Upload className="w-5 h-5" /> Load ROM File
           </button>
         </div>
       </div>
@@ -90,8 +163,6 @@ export default function PlayPage() {
             <div className="bg-black border border-[#27272A] hover:border-emerald-500/30 rounded-xl overflow-hidden shadow-[0_0_40px_rgba(16,185,129,0.04)] transition-colors duration-300">
               <Emulator key={emuKey} romFile={romFile} biosFile={biosFile} />
             </div>
-
-            {/* Game info bar */}
             <div className="flex items-center justify-between mt-3 px-1">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
@@ -111,10 +182,9 @@ export default function PlayPage() {
             <div className="bg-[#141417] border border-white/5 rounded-xl p-4">
               <p className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-3">Actions</p>
               <div className="space-y-2">
-                <input ref={romRef} type="file" accept=".gb,.gbc,.gba" className="hidden" onChange={handleRomChange} data-testid="change-rom-input" />
+                <input ref={romRef} type="file" accept=".gb,.gbc,.gba" className="hidden" onChange={handleRomChange} />
                 <button
                   onClick={() => romRef.current?.click()}
-                  data-testid="change-rom-btn"
                   className="w-full flex items-center gap-2 bg-transparent border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white text-sm px-3 py-2.5 rounded-lg transition-colors"
                 >
                   <FileUp className="w-4 h-4" /> Change ROM
@@ -122,10 +192,9 @@ export default function PlayPage() {
 
                 {coreType === "gba" && (
                   <>
-                    <input ref={biosRef} type="file" accept=".bin" className="hidden" onChange={handleBiosChange} data-testid="bios-file-input" />
+                    <input ref={biosRef} type="file" accept=".bin" className="hidden" onChange={handleBiosChange} />
                     <button
                       onClick={() => biosRef.current?.click()}
-                      data-testid="load-bios-btn"
                       className="w-full flex items-center gap-2 bg-transparent border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white text-sm px-3 py-2.5 rounded-lg transition-colors"
                     >
                       <Cpu className="w-4 h-4" />
@@ -136,7 +205,6 @@ export default function PlayPage() {
 
                 <button
                   onClick={() => navigate("/nuzlocke")}
-                  data-testid="open-nuzlocke-btn"
                   className="w-full flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 text-sm px-3 py-2.5 rounded-lg transition-colors"
                 >
                   <Trophy className="w-4 h-4" /> Nuzlocke Tracker
@@ -144,12 +212,23 @@ export default function PlayPage() {
               </div>
             </div>
 
-            {/* Controls */}
+            {/* Controls — updates when user remaps in EmulatorJS */}
             <div className="bg-[#141417] border border-white/5 rounded-xl p-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-3">Controls</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-600">Controls</p>
+                {ejsReady && (
+                  <button
+                    onClick={refreshControls}
+                    title="Refresh controls"
+                    className="text-gray-700 hover:text-gray-400 transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
               <div className="space-y-1.5">
-                {CONTROLS.map(({ key, action }) => (
-                  <div key={key} className="flex items-center justify-between">
+                {controls.map(({ key, action }) => (
+                  <div key={action} className="flex items-center justify-between">
                     <span className="font-mono text-xs bg-gray-900 border border-gray-700 px-2 py-0.5 rounded text-gray-300">
                       {key}
                     </span>
@@ -157,6 +236,11 @@ export default function PlayPage() {
                   </div>
                 ))}
               </div>
+              {ejsReady && (
+                <p className="text-gray-700 text-[10px] mt-2 leading-relaxed">
+                  Remap in emulator Settings → Controls. Panel updates automatically.
+                </p>
+              )}
             </div>
 
             {/* Platform info */}
@@ -172,6 +256,14 @@ export default function PlayPage() {
                 <div className="mt-3 p-2.5 bg-emerald-500/5 border border-emerald-500/15 rounded-lg">
                   <p className="text-emerald-600 text-[11px] leading-relaxed">
                     GBA BIOS auto-loaded for best compatibility.
+                  </p>
+                </div>
+              )}
+
+              {(coreType === "gbc" || coreType === "gb") && (
+                <div className="mt-3 p-2.5 bg-blue-500/5 border border-blue-500/15 rounded-lg">
+                  <p className="text-blue-400 text-[11px] leading-relaxed">
+                    Using Gambatte core — best accuracy for GB & GBC.
                   </p>
                 </div>
               )}
