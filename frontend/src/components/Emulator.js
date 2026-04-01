@@ -1,14 +1,29 @@
 import { useEffect, useRef } from "react";
 
-// Auto-loaded GBA BIOS (user-supplied)
 const GBA_BIOS_URL =
   "https://customer-assets.emergentagent.com/job_nuzlocke-scanner/artifacts/gibis365_gba_bios_romsretro.com.bin";
 
+// EmulatorJS core names — gambatte handles both GB and GBC
 function detectCore(filename) {
   const ext = filename.toLowerCase().split(".").pop();
   if (ext === "gba") return "gba";
-  if (ext === "gbc") return "gbc";
-  return "gb";
+  if (ext === "gbc") return "gambatte";
+  if (ext === "gb")  return "gambatte";
+  return "gambatte";
+}
+
+// Hide the EmulatorJS "Powered by" badge via injected CSS
+function injectBadgeHide() {
+  const id = "ejs-badge-hide";
+  if (document.getElementById(id)) return;
+  const style = document.createElement("style");
+  style.id = id;
+  style.textContent = `
+    .ejs_powered_by, .ejs-powered-by, .ejs_shoutout,
+    .netplay-shoutout, [class*="powered"], [class*="shoutout"],
+    .ejs_menu_bar .ejs_menu_item:last-child { display: none !important; }
+  `;
+  document.head.appendChild(style);
 }
 
 export default function Emulator({ romFile, biosFile }) {
@@ -22,12 +37,12 @@ export default function Emulator({ romFile, biosFile }) {
     let biosUrl = null;
     const container = containerRef.current;
 
-    // Suppress cross-origin EmulatorJS errors so they don't crash React
     const suppressErrors = (event) => {
       if (
         event.message === "Script error." ||
         event.message === "ResizeObserver loop completed with undelivered notifications." ||
-        event.filename?.includes("emulatorjs")
+        event.filename?.includes("emulatorjs") ||
+        event.filename?.includes("emulator.min")
       ) {
         event.stopImmediatePropagation();
         event.preventDefault();
@@ -36,12 +51,10 @@ export default function Emulator({ romFile, biosFile }) {
     };
     window.addEventListener("error", suppressErrors, true);
 
-    // Remove any previous EmulatorJS instance
     const prevScript = document.getElementById("emulatorjs-loader");
     if (prevScript) prevScript.remove();
     if (container) container.innerHTML = "";
 
-    // Configure EmulatorJS
     window.EJS_player = "#emu-game";
     window.EJS_core = core;
     window.EJS_gameUrl = romUrl;
@@ -58,13 +71,22 @@ export default function Emulator({ romFile, biosFile }) {
       loadSavFiles: true, quickSave: true, quickLoad: true,
     };
 
-    // BIOS: use uploaded file, or auto-load the pre-configured GBA BIOS
+    // Callback fired when emulator finishes loading — good time to hide badge
+    window.EJS_onGameStart = () => {
+      injectBadgeHide();
+      // Notify React that controls may have loaded
+      window.dispatchEvent(new CustomEvent("ejs-ready"));
+    };
+
     if (biosFile) {
       biosUrl = URL.createObjectURL(biosFile);
       window.EJS_biosUrl = biosUrl;
     } else if (core === "gba") {
       window.EJS_biosUrl = GBA_BIOS_URL;
     }
+
+    // Inject badge hide early too
+    injectBadgeHide();
 
     const script = document.createElement("script");
     script.id = "emulatorjs-loader";
@@ -83,6 +105,7 @@ export default function Emulator({ romFile, biosFile }) {
         delete window.EJS_gameUrl;
         delete window.EJS_core;
         delete window.EJS_biosUrl;
+        delete window.EJS_onGameStart;
       } catch (_) {}
     };
   }, [romFile, biosFile]);
