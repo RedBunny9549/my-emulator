@@ -21,6 +21,7 @@ export default function Navbar() {
     { to: "/nuzlocke", icon: Trophy,   label: "Nuzlocke" },
     { to: "/routes",   icon: Map,      label: "Routes"   },
     { to: "/bosses",   icon: BookOpen, label: "Bosses"   },
+    { to: "/coverage", icon: Grid,     label: "Coverage" },
   ];
 
   const isActive = (to) => {
