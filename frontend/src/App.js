@@ -7,6 +7,7 @@ import NuzlockeRunPage from "./components/NuzlockeRunPage";
 import LibraryPage from "./components/LibraryPage";
 import BossGuide from "./components/BossGuide";
 import RouteBrowser from "./components/RouteBrowser";
+import PokedexBrowser from "./components/PokedexBrowser";
 import TypeCoverageMap from "./components/TypeCoverageMap";
 
 export const EmuContext = createContext(null);
@@ -27,7 +28,13 @@ function App() {
     try {
       const stored = JSON.parse(localStorage.getItem("recent_roms") || "[]");
       const existing = stored.find((r) => r.name === file.name);
-      const entry = { name: file.name, size: file.size, lastPlayed: Date.now(), core, playCount: existing ? (existing.playCount || 1) + 1 : 1 };
+      const entry = {
+        name: file.name,
+        size: file.size,
+        lastPlayed: Date.now(),
+        core,
+        playCount: existing ? (existing.playCount || 1) + 1 : 1,
+      };
       const filtered = stored.filter((r) => r.name !== file.name);
       localStorage.setItem("recent_roms", JSON.stringify([entry, ...filtered].slice(0, 10)));
     } catch (_) {}
@@ -38,14 +45,15 @@ function App() {
       <div className="App">
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Navigate to="/play" replace />} />
-            <Route path="/play" element={<PlayPage />} />
-            <Route path="/library" element={<LibraryPage />} />
-            <Route path="/nuzlocke" element={<NuzlockeList />} />
+            <Route path="/"            element={<Navigate to="/play" replace />} />
+            <Route path="/play"        element={<PlayPage />} />
+            <Route path="/library"     element={<LibraryPage />} />
+            <Route path="/nuzlocke"    element={<NuzlockeList />} />
             <Route path="/nuzlocke/:runId" element={<NuzlockeRunPage />} />
-            <Route path="/bosses" element={<BossGuide />} />
-            <Route path="/routes" element={<RouteBrowser />} />
-            <Route path="/coverage" element={<TypeCoverageMap />} />
+            <Route path="/bosses"      element={<BossGuide />} />
+            <Route path="/routes"      element={<RouteBrowser />} />
+            <Route path="/pokedex"     element={<PokedexBrowser />} />
+            <Route path="/coverage"    element={<TypeCoverageMap />} />
           </Routes>
         </BrowserRouter>
       </div>
