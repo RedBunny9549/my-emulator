@@ -7,6 +7,7 @@ import NuzlockeRunPage from "./components/NuzlockeRunPage";
 import LibraryPage from "./components/LibraryPage";
 import BossGuide from "./components/BossGuide";
 import RouteBrowser from "./components/RouteBrowser";
+import TypeCoverageMap from "./components/TypeCoverageMap";
 
 export const EmuContext = createContext(null);
 export function useEmu() { return useContext(EmuContext); }
@@ -44,6 +45,7 @@ function App() {
             <Route path="/nuzlocke/:runId" element={<NuzlockeRunPage />} />
             <Route path="/bosses" element={<BossGuide />} />
             <Route path="/routes" element={<RouteBrowser />} />
+            <Route path="/coverage" element={<TypeCoverageMap />} />
           </Routes>
         </BrowserRouter>
       </div>
