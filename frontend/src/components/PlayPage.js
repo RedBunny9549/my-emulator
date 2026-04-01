@@ -71,6 +71,19 @@ export default function PlayPage() {
   const romRef = useRef(null);
   const biosRef = useRef(null);
 
+  // useCallback so refreshControls is stable across renders
+  const refreshControls = useCallback(() => {
+    const ejsControls = readEJSControls();
+    if (!ejsControls) return;
+    const built = [];
+    for (const [k, v] of Object.entries(ejsControls)) {
+      const label = EJS_KEY_MAP[k] || k;
+      const keyName = typeof v === "string" ? v : JSON.stringify(v);
+      if (keyName && label) built.push({ key: keyName, action: label });
+    }
+    if (built.length > 0) setControls(built);
+  }, []);
+
   // Listen for EmulatorJS ready event fired from Emulator.js
   useEffect(() => {
     const onReady = () => {
@@ -79,12 +92,17 @@ export default function PlayPage() {
     };
     window.addEventListener("ejs-ready", onReady);
 
-    // Also poll localStorage for control changes every 2s while playing
+    // Poll localStorage for control changes every 2s — use a ref so interval
+    // always sees the latest ejsReady without being a dependency
+    const ejsReadyRef = { current: false };
     const interval = setInterval(() => {
-      if (ejsReady) refreshControls();
+      if (ejsReadyRef.current) refreshControls();
     }, 2000);
 
-    // Listen for storage changes (when user remaps in settings)
+    const onReadyForRef = () => { ejsReadyRef.current = true; };
+    window.addEventListener("ejs-ready", onReadyForRef);
+
+    // Listen for storage changes (user remaps in emulator settings)
     const onStorage = (e) => {
       if (e.key && (e.key.toLowerCase().includes("emulator") || e.key.toLowerCase().includes("ejs"))) {
         refreshControls();
@@ -94,23 +112,13 @@ export default function PlayPage() {
 
     return () => {
       window.removeEventListener("ejs-ready", onReady);
+      window.removeEventListener("ejs-ready", onReadyForRef);
       window.removeEventListener("storage", onStorage);
       clearInterval(interval);
     };
-  }, [ejsReady]);
+  }, [refreshControls]);
 
-  const refreshControls = () => {
-    const ejsControls = readEJSControls();
-    if (!ejsControls) return;
-    // Try to build a readable control list from whatever EJS stored
-    const built = [];
-    for (const [k, v] of Object.entries(ejsControls)) {
-      const label = EJS_KEY_MAP[k] || k;
-      const keyName = typeof v === "string" ? v : JSON.stringify(v);
-      if (keyName && label) built.push({ key: keyName, action: label });
-    }
-    if (built.length > 0) setControls(built);
-  };
+
 
   const handleRomChange = useCallback((e) => {
     const file = e.target.files[0];
