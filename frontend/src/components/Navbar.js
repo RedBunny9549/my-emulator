@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Gamepad2, Trophy, Library, Upload, BookOpen, Map, BookMarked, LayoutGrid } from "lucide-react";
+import { Gamepad2, Library, Upload, BookOpen, Map, BookMarked, LayoutGrid } from "lucide-react";
 import { useRef } from "react";
 import { useEmu } from "../App";
 
@@ -18,7 +18,6 @@ export default function Navbar() {
   const links = [
     { to: "/play",     icon: Gamepad2,   label: "Play"     },
     { to: "/library",  icon: Library,    label: "Library"  },
-    { to: "/nuzlocke", icon: Trophy,     label: "Nuzlocke" },
     { to: "/routes",   icon: Map,        label: "Routes"   },
     { to: "/pokedex",  icon: BookMarked, label: "Pokédex"  },
     { to: "/coverage", icon: LayoutGrid, label: "Coverage" },
