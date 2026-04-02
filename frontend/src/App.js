@@ -22,30 +22,44 @@ function App() {
 
   const loadRom = (file) => {
     const ext = file.name.toLowerCase().split(".").pop();
-    let core = (ext === "gbc" || ext === "gb") ? "gambatte" : "mgba";
+    const core = (ext === "gbc" || ext === "gb") ? "gambatte" : "mgba";
+    
     setRomFile(file);
     setCoreType(core);
     setGameTitle(file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " "));
+
+    try {
+      const stored = JSON.parse(localStorage.getItem("recent_roms") || "[]");
+      const existing = stored.find((r) => r.name === file.name);
+      const entry = {
+        name: file.name,
+        size: file.size,
+        lastPlayed: Date.now(),
+        core,
+        playCount: existing ? (existing.playCount || 1) + 1 : 1,
+      };
+      const filtered = stored.filter((r) => r.name !== file.name);
+      localStorage.setItem("recent_roms", JSON.stringify([entry, ...filtered].slice(0, 10)));
+    } catch (_) {}
   };
 
   return (
     <EmuContext.Provider value={{ romFile, biosFile, setBiosFile, gameTitle, coreType, loadRom }}>
-      {/* Classic Dark/Emerald UI Wrapper */}
-      <div className="App bg-[#0D0D10] min-h-screen text-white">
+      <div className="App min-h-screen bg-[#0A0A0C] text-white">
         <BrowserRouter>
           <Navbar />
-          {/* Padding-top ensures Navbar (h-12) doesn't overlap content */}
-          <main className="pt-12">
+          {/* pt-6 ensures content isn't hidden under the sticky navbar */}
+          <main className="pt-6 pb-12">
             <Routes>
-              <Route path="/" element={<Navigate to="/play" replace />} />
-              <Route path="/play" element={<PlayPage />} />
-              <Route path="/library" element={<LibraryPage />} />
-              <Route path="/nuzlocke" element={<NuzlockeList />} />
+              <Route path="/"            element={<Navigate to="/play" replace />} />
+              <Route path="/play"        element={<PlayPage />} />
+              <Route path="/library"     element={<LibraryPage />} />
+              <Route path="/nuzlocke"    element={<NuzlockeList />} />
               <Route path="/nuzlocke/:runId" element={<NuzlockeRunPage />} />
-              <Route path="/bosses" element={<BossGuide />} />
-              <Route path="/routes" element={<RouteBrowser />} />
-              <Route path="/pokedex" element={<PokedexBrowser />} />
-              <Route path="/coverage" element={<TypeCoverageMap />} />
+              <Route path="/bosses"      element={<BossGuide />} />
+              <Route path="/routes"      element={<RouteBrowser />} />
+              <Route path="/pokedex"     element={<PokedexBrowser />} />
+              <Route path="/coverage"    element={<TypeCoverageMap />} />
             </Routes>
           </main>
         </BrowserRouter>
