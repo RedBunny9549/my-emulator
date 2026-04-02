@@ -32,7 +32,7 @@ export default function DatabaseBrowser() {
   return (
     <div className="max-w-6xl mx-auto px-4">
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center">
+        <div className="w-12 h-12 bg-[#16161A] border border-white/5 rounded-2xl flex items-center justify-center">
           <Database className="w-6 h-6 text-emerald-400" />
         </div>
         <div>
@@ -50,7 +50,7 @@ export default function DatabaseBrowser() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left Side: List */}
+        {/* Left Side: Searchable List */}
         <div className="lg:w-1/2 flex flex-col gap-4 h-[60vh]">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -66,7 +66,7 @@ export default function DatabaseBrowser() {
           </div>
         </div>
 
-        {/* Right Side: Details */}
+        {/* Right Side: Details Panel */}
         <div className="lg:w-1/2">
           {selected ? (
             <div className="bg-[#16161A] border border-white/5 rounded-3xl p-6 shadow-xl sticky top-20">
@@ -76,22 +76,23 @@ export default function DatabaseBrowser() {
               </span>
 
               {tab === "moves" && (
-                <div className="flex gap-4 mb-6">
+                <div className="flex flex-wrap gap-3 mb-6">
                   <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">Type</p><p className="text-sm font-bold text-white uppercase">{selected.type.name}</p></div>
                   <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">Class</p><p className="text-sm font-bold text-white capitalize">{selected.damage_class.name}</p></div>
                   <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">Power</p><p className="text-sm font-bold text-white font-mono">{selected.power || "-"}</p></div>
                   <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">Acc</p><p className="text-sm font-bold text-white font-mono">{selected.accuracy || "-"}</p></div>
+                  <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">PP</p><p className="text-sm font-bold text-white font-mono">{selected.pp || "-"}</p></div>
                 </div>
               )}
 
               <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Effect</h3>
               <p className="text-sm text-gray-300 leading-relaxed bg-[#0D0D10] p-4 rounded-xl border border-white/5">
-                {selected.effect_entries?.find(e => e.language.name === "en")?.effect.replace("$effect_chance", selected.effect_chance) || "No description available."}
+                {selected.effect_entries?.find(e => e.language.name === "en")?.effect.replace("$effect_chance", selected.effect_chance || "") || "No description available."}
               </p>
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-3xl p-10 text-gray-500">
-              Select an item from the list to view its details.
+            <div className="h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-3xl p-10 text-gray-500 text-center">
+              Select a move or ability from the list to view its details.
             </div>
           )}
         </div>
