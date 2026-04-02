@@ -14,10 +14,9 @@ export default function DatabaseBrowser() {
     setSearch("");
     setSelected(null);
     
-    // FIX: PokeAPI strictly requires singular endpoints ("move" and "ability")
-    const endpoint = tab === "moves" ? "move" : "ability";
+    const endpoint = tab === "moves" ? "move" : tab === "abilities" ? "ability" : "item";
 
-    fetch(`https://pokeapi.co/api/v2/${endpoint}?limit=1000`)
+    fetch(`https://pokeapi.co/api/v2/${endpoint}?limit=2000`)
       .then(r => {
         if (!r.ok) throw new Error("API request failed");
         return r.json();
@@ -58,12 +57,12 @@ export default function DatabaseBrowser() {
         </div>
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight">Data Browser</h1>
-          <p className="text-gray-500 text-sm">Lookup Moves & Abilities</p>
+          <p className="text-gray-500 text-sm">Lookup Moves, Abilities & Items</p>
         </div>
       </div>
 
       <div className="flex gap-2 mb-6">
-        {["moves", "abilities"].map(t => (
+        {["moves", "abilities", "items"].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-all capitalize ${tab === t ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-[#16161A] border-white/5 text-gray-400 hover:text-white"}`}>
             {t}
           </button>
@@ -91,10 +90,16 @@ export default function DatabaseBrowser() {
         <div className="lg:w-1/2">
           {selected ? (
             <div className="bg-[#16161A] border border-white/5 rounded-3xl p-6 shadow-xl sticky top-20">
+              {tab === "items" && selected.sprites?.default && (
+                <img src={selected.sprites.default} className="w-16 h-16 drop-shadow-md pixelated mb-4" alt={selected.name} />
+              )}
               <h2 className="text-3xl font-black text-white capitalize mb-2">{selected.name.replace(/-/g, " ")}</h2>
-              <span className="inline-block px-3 py-1 bg-white/5 text-gray-400 text-xs font-bold uppercase rounded border border-white/10 mb-6">
-                Introduced in {selected.generation?.name.replace("generation-", "Gen ") || "Unknown Gen"}
-              </span>
+              
+              {selected.generation && (
+                <span className="inline-block px-3 py-1 bg-white/5 text-gray-400 text-xs font-bold uppercase rounded border border-white/10 mb-6">
+                  Introduced in {selected.generation.name.replace("generation-", "Gen ")}
+                </span>
+              )}
 
               {tab === "moves" && selected.type && (
                 <div className="flex flex-wrap gap-3 mb-6">
@@ -106,14 +111,22 @@ export default function DatabaseBrowser() {
                 </div>
               )}
 
+              {tab === "items" && (
+                <div className="flex flex-wrap gap-3 mb-6">
+                  <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">Category</p><p className="text-sm font-bold text-white capitalize">{selected.category?.name.replace(/-/g, " ") || "-"}</p></div>
+                  <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">Cost</p><p className="text-sm font-bold text-white font-mono">₽ {selected.cost || 0}</p></div>
+                </div>
+              )}
+
               <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Effect</h3>
               <p className="text-sm text-gray-300 leading-relaxed bg-[#0D0D10] p-4 rounded-xl border border-white/5">
-                {selected.effect_entries?.find(e => e.language.name === "en")?.effect.replace("$effect_chance", selected.effect_chance || "") || "No description available."}
+                {selected.effect_entries?.find(e => e.language.name === "en")?.effect.replace("$effect_chance", selected.effect_chance || "") || 
+                 selected.flavor_text_entries?.find(e => e.language.name === "en")?.text || "No description available."}
               </p>
             </div>
           ) : (
             <div className="h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-3xl p-10 text-gray-500 text-center">
-              Select a {tab === "moves" ? "move" : "ability"} from the list to view its details.
+              Select an entry from the list to view its details.
             </div>
           )}
         </div>
