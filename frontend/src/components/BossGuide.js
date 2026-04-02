@@ -1,11 +1,20 @@
 import { useState, useEffect } from "react";
-import { BookOpen, X, Loader2 } from "lucide-react";
+import { BookOpen, X, Loader2, AlertTriangle, Crosshair } from "lucide-react";
 import { BOSS_DATA } from "../data/bossData";
+import { LEVEL_CAPS } from "../data/levelCaps";
+import { MOVE_DATA, getMoveCategory } from "../data/moveData";
 
 const GAME_LABELS = {
   emerald: { name: "Pokémon Emerald", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/30" },
   firered: { name: "Pokémon FireRed", color: "text-red-400",     bg: "bg-red-500/10",     border: "border-red-500/30"     },
   crystal: { name: "Pokémon Crystal", color: "text-blue-400",    bg: "bg-blue-500/10",    border: "border-blue-500/30"    },
+};
+
+const TYPE_COLORS = {
+  fire:"#FF4422",water:"#3399FF",grass:"#77CC55",electric:"#FFCC33",
+  psychic:"#FF5599",ice:"#66CCFF",dragon:"#7766EE",dark:"#AA7766",
+  normal:"#AAAAAA",fighting:"#CC6655",flying:"#8899FF",poison:"#AA55AA",
+  ground:"#DDBB55",rock:"#BBAA66",bug:"#AABB22",ghost:"#6655BB",steel:"#AAAABB",
 };
 
 function getTrainerSprite(leader) {
@@ -25,33 +34,59 @@ function BossPokemonModal({ pokemon, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[#16161A] border border-white/10 rounded-2xl w-full max-w-sm p-6" onClick={e=>e.stopPropagation()}>
+      <div className="bg-[#16161A] border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl" onClick={e=>e.stopPropagation()}>
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h2 className="text-2xl font-bold text-white capitalize">{pokemon.name}</h2>
-            <p className="text-gray-500 font-mono text-sm">Level {pokemon.level}</p>
+            <h2 className="text-2xl font-black text-white capitalize tracking-tight">{pokemon.name}</h2>
+            <p className="text-emerald-500 font-bold text-sm">Level {pokemon.level}</p>
           </div>
-          <button onClick={onClose}><X className="text-gray-500 hover:text-white" /></button>
+          <button onClick={onClose} className="bg-white/5 p-2 rounded-full hover:bg-white/10 transition-colors"><X className="text-gray-400 w-5 h-5" /></button>
         </div>
 
-        {!data ? <Loader2 className="animate-spin text-emerald-500 mx-auto" /> : (
+        {!data ? <Loader2 className="animate-spin text-emerald-500 mx-auto my-12" /> : (
           <div>
-            <img src={data.sprites.front_default} className="w-24 h-24 mx-auto pixelated" alt={pokemon.name} />
-            
-            <div className="mt-4">
-              <p className="text-xs text-gray-500 font-bold uppercase mb-1">Possible Abilities</p>
-              <div className="flex gap-2">
-                {data.abilities.map(a => <span key={a.ability.name} className="px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded capitalize">{a.ability.name.replace("-"," ")}</span>)}
+            <div className="bg-[#0D0D10] border border-white/5 rounded-2xl p-4 mb-6 relative overflow-hidden">
+              <div className="absolute inset-0 bg-emerald-500/5" />
+              <img src={data.sprites.other["official-artwork"]?.front_default || data.sprites.front_default} className="w-32 h-32 mx-auto drop-shadow-xl relative z-10" alt={pokemon.name} />
+              <div className="flex gap-2 justify-center mt-4 relative z-10">
+                {data.types.map(t => (
+                  <span key={t.type.name} style={{ backgroundColor: TYPE_COLORS[t.type.name]+"25", color: TYPE_COLORS[t.type.name], borderColor: TYPE_COLORS[t.type.name]+"40" }} className="px-3 py-1 border text-[10px] font-black uppercase rounded shadow-sm">
+                    {t.type.name}
+                  </span>
+                ))}
               </div>
             </div>
 
             {pokemon.moves && pokemon.moves.length > 0 && (
-              <div className="mt-4">
-                <p className="text-xs text-gray-500 font-bold uppercase mb-1">Known Moves</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {pokemon.moves.map(m => (
-                    <div key={m} className="bg-gray-800 px-2 py-1 rounded text-xs text-gray-300 capitalize">{m.replace("-"," ")}</div>
-                  ))}
+              <div className="mb-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <Crosshair className="w-4 h-4 text-emerald-500" />
+                  <p className="text-xs text-white font-bold uppercase tracking-widest">Known Moveset</p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {pokemon.moves.map(m => {
+                    const moveStats = MOVE_DATA[m];
+                    return (
+                      <div key={m} className="bg-[#0D0D10] border border-white/5 px-4 py-3 rounded-xl flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          {moveStats ? (
+                            <span style={{ backgroundColor: TYPE_COLORS[moveStats.type]+"20", color: TYPE_COLORS[moveStats.type] }} className="w-16 text-center py-1 rounded text-[10px] font-black uppercase">
+                              {moveStats.type}
+                            </span>
+                          ) : (
+                            <span className="w-16 text-center py-1 bg-gray-800 text-gray-400 rounded text-[10px] font-black uppercase">STATUS</span>
+                          )}
+                          <span className="text-sm text-gray-200 font-bold capitalize">{m.replace("-"," ")}</span>
+                        </div>
+                        {moveStats && (
+                          <div className="flex gap-4 text-[10px] font-mono">
+                            <span className="text-gray-400">PWR <span className="text-white font-bold">{moveStats.power}</span></span>
+                            <span className="text-gray-400">ACC <span className="text-white font-bold">{moveStats.acc}</span></span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -67,20 +102,18 @@ export default function BossGuide() {
   const [section, setSection] = useState("gyms");
   const [selectedPokemon, setSelectedPokemon] = useState(null);
 
-  // FIX: Provide robust fallbacks to prevent `.map` crashes
   const gData = BOSS_DATA[game] || BOSS_DATA.emerald;
-  const bosses = section === "gyms" 
-    ? (gData.gyms || []) 
-    : [...(gData.elite || []), gData.champion].filter(Boolean);
+  const bosses = section === "gyms" ? (gData.gyms || []) : [...(gData.elite || []), gData.champion].filter(Boolean);
+  const gameCaps = LEVEL_CAPS[game] || {};
 
   return (
     <div className="max-w-6xl mx-auto px-4">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-[#16161A] border border-white/5 rounded-xl flex items-center justify-center">
-          <BookOpen className="w-5 h-5 text-emerald-400" />
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-[#16161A] border border-emerald-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/10">
+          <BookOpen className="w-6 h-6 text-emerald-400" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white">Boss Guide</h1>
+          <h1 className="text-3xl font-black text-white tracking-tight">Boss Guide</h1>
           <p className="text-gray-500 text-sm">Gym leaders, Elite Four & Champions</p>
         </div>
       </div>
@@ -90,8 +123,8 @@ export default function BossGuide() {
           <button
             key={key}
             onClick={() => setGame(key)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
-              game === key ? `${bg} ${border} ${color}` : "bg-transparent border-white/5 text-gray-500 hover:text-white"
+            className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-all shadow-sm ${
+              game === key ? `${bg} ${border} ${color} shadow-lg scale-105` : "bg-[#16161A] border-white/5 text-gray-400 hover:text-white hover:bg-white/5"
             }`}
           >
             {name}
@@ -99,12 +132,12 @@ export default function BossGuide() {
         ))}
       </div>
 
-      <div className="flex border-b border-white/5 mb-6">
+      <div className="flex border-b border-white/10 mb-8">
         {[{ id: "gyms", label: "Gym Leaders" }, { id: "elite", label: "Elite Four & Champion" }].map(({ id, label }) => (
           <button 
             key={id} 
             onClick={() => setSection(id)} 
-            className={`px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors ${section === id ? "border-emerald-400 text-emerald-400" : "border-transparent text-gray-500 hover:text-white"}`}
+            className={`px-6 py-4 text-sm font-bold border-b-2 -mb-px transition-colors ${section === id ? "border-emerald-400 text-emerald-400" : "border-transparent text-gray-500 hover:text-white"}`}
           >
             {label}
           </button>
@@ -112,28 +145,41 @@ export default function BossGuide() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {bosses.map(boss => (
-          <div key={boss.leader} className="bg-[#16161A] border border-white/10 rounded-3xl p-6 flex flex-col sm:flex-row gap-6">
-            <div className="flex flex-col items-center gap-2 flex-shrink-0">
-              <div className="w-20 h-20 bg-emerald-500/10 rounded-2xl p-2 border border-emerald-500/20">
-                <img src={getTrainerSprite(boss.leader)} className="w-full h-full object-contain" alt={boss.leader} onError={(e) => e.target.src = 'https://play.pokemonshowdown.com/sprites/trainers/red.png'} />
+        {bosses.map(boss => {
+          const cap = gameCaps[boss.leader];
+          
+          return (
+            <div key={boss.leader} className="bg-[#16161A] border border-white/5 rounded-3xl p-6 flex flex-col sm:flex-row gap-6 shadow-xl hover:border-white/10 transition-colors">
+              <div className="flex flex-col items-center gap-3 flex-shrink-0">
+                <div className="w-24 h-24 bg-gradient-to-t from-black/40 to-transparent rounded-2xl p-2 border border-white/5 shadow-inner">
+                  <img src={getTrainerSprite(boss.leader)} className="w-full h-full object-contain" alt={boss.leader} onError={(e) => e.target.src = 'https://play.pokemonshowdown.com/sprites/trainers/red.png'} />
+                </div>
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{boss.badge || boss.title}</span>
               </div>
-              <span className="text-[10px] font-bold text-emerald-500 uppercase">{boss.badge || boss.title}</span>
-            </div>
 
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-white mb-3 uppercase">{boss.leader}</h2>
-              <div className="flex flex-wrap gap-2">
-                {boss.team.map((p, i) => (
-                  <button key={i} onClick={() => setSelectedPokemon(p)} className="flex flex-col items-center bg-[#0D0D10] hover:bg-white/5 transition-colors cursor-pointer rounded-xl p-2 border border-white/5">
-                    <img src={`https://img.pokemondb.net/sprites/emerald/normal/${p.name.toLowerCase()}.png`} className="w-10 h-10 pixelated" title={p.name} onError={(e) => e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'} />
-                    <span className="text-[9px] text-gray-500 font-bold uppercase mt-1">Lv.{p.level}</span>
-                  </button>
-                ))}
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start mb-4">
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">{boss.leader}</h2>
+                  {cap && (
+                    <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg shadow-sm">
+                      <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                      <span className="text-red-400 font-bold text-xs">CAP: {cap}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  {boss.team.map((p, i) => (
+                    <button key={i} onClick={() => setSelectedPokemon(p)} className="flex flex-col items-center bg-[#0D0D10] hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all cursor-pointer rounded-xl p-3 border border-white/5 shadow-sm">
+                      <img src={`https://img.pokemondb.net/sprites/emerald/normal/${p.name.toLowerCase()}.png`} className="w-10 h-10 pixelated drop-shadow-md mb-2" title={p.name} onError={(e) => e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'} />
+                      <span className="text-[10px] text-gray-400 font-black font-mono">LV.{p.level}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {selectedPokemon && <BossPokemonModal pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />}
