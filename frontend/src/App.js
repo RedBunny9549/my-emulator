@@ -9,6 +9,7 @@ import BossGuide from "./components/BossGuide";
 import RouteBrowser from "./components/RouteBrowser";
 import PokedexBrowser from "./components/PokedexBrowser";
 import TypeCoverageMap from "./components/TypeCoverageMap";
+import Navbar from "./components/Navbar";
 
 export const EmuContext = createContext(null);
 export function useEmu() { return useContext(EmuContext); }
@@ -22,7 +23,7 @@ function App() {
   const loadRom = (file) => {
     const ext = file.name.toLowerCase().split(".").pop();
     
-    // FIXED: EmulatorJS requires 'gambatte' for GB/GBC and 'mgba' for GBA
+    // Fix: Use 'gambatte' for GB/GBC to ensure they boot correctly
     let core = "mgba";
     if (ext === "gbc" || ext === "gb") {
       core = "gambatte";
@@ -49,8 +50,9 @@ function App() {
 
   return (
     <EmuContext.Provider value={{ romFile, biosFile, setBiosFile, gameTitle, coreType, loadRom }}>
-      <div className="App bg-mudkip-navy min-h-screen text-white">
+      <div className="App bg-[#0a1628] min-h-screen text-white">
         <BrowserRouter>
+          <Navbar />
           <Routes>
             <Route path="/"            element={<Navigate to="/play" replace />} />
             <Route path="/play"        element={<PlayPage />} />
