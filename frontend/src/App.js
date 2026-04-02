@@ -42,6 +42,8 @@ function App() {
               <Route path="/pokedex"     element={<PokedexBrowser />} />
               <Route path="/coverage"    element={<TypeCoverageMap />} />
               <Route path="/database"    element={<DatabaseBrowser />} />
+              
+              {/* Catch-all for any broken links or old Nuzlocke bookmarks */}
               <Route path="*"            element={<Navigate to="/play" replace />} />
             </Routes>
           </main>
