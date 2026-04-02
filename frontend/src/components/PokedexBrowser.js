@@ -14,7 +14,6 @@ const GEN_RANGES = {
   0: { min:1, max:1025, name:"All" }
 };
 
-// --- Interactive Ability Row ---
 function AbilityRow({ name, isHidden }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
@@ -52,7 +51,6 @@ function AbilityRow({ name, isHidden }) {
   );
 }
 
-// --- Interactive Move Row ---
 function MoveRow({ moveName, level }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
@@ -117,31 +115,59 @@ function MoveRow({ moveName, level }) {
   );
 }
 
-// --- Evolutions Component ---
+// --- Dynamic Evolution Chain Parser ---
 function EvolutionChain({ url }) {
-  const [chain, setChain] = useState([]);
+  const [paths, setPaths] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     if (!url) return;
+    setLoading(true);
     fetch(url).then(r=>r.json()).then(d => {
-      const evos = [];
-      let curr = d.chain;
-      while (curr) {
-        evos.push(curr.species.name);
-        curr = curr.evolves_to[0]; // Simplistic linear mapping for general use
-      }
-      setChain(evos);
-    }).catch(()=>{});
+      const newPaths = [];
+      const traverse = (node, prevName = null, condition = null) => {
+        if (prevName) {
+          newPaths.push({ from: prevName, to: node.species.name, condition });
+        }
+        node.evolves_to.forEach(evo => {
+          let cond = "Evolve";
+          const det = evo.evolution_details[0]; // grab primary evolution method
+          if (det) {
+            if (det.trigger.name === 'level-up') {
+              cond = `Lv. ${det.min_level || 'Up'}`;
+              if (det.min_happiness) cond = "High Friendship";
+              if (det.known_move) cond = `Knows ${det.known_move.name.replace("-"," ")}`;
+              if (det.location) cond = `At ${det.location.name.replace("-"," ")}`;
+            } else if (det.trigger.name === 'use-item') {
+              cond = `${det.item.name.replace("-"," ")}`;
+            } else if (det.trigger.name === 'trade') {
+              cond = `Trade`;
+              if (det.held_item) cond += ` + ${det.held_item.name.replace("-"," ")}`;
+            }
+            if (det.time_of_day) cond += ` (${det.time_of_day})`;
+          }
+          traverse(evo, node.species.name, cond);
+        });
+      };
+      traverse(d.chain);
+      setPaths(newPaths);
+      setLoading(false);
+    }).catch(()=>{ setLoading(false); });
   }, [url]);
 
-  if (chain.length < 2) return <p className="text-gray-500 text-xs italic">Does not evolve.</p>;
+  if (loading) return <Loader2 className="animate-spin text-emerald-500 w-4 h-4" />;
+  if (paths.length === 0) return <p className="text-gray-500 text-xs italic">Does not evolve.</p>;
 
   return (
-    <div className="flex items-center gap-3 flex-wrap">
-      {chain.map((name, i) => (
-        <div key={name} className="flex items-center gap-3">
-          <div className="bg-[#0D0D10] border border-white/5 px-3 py-2 rounded-lg text-sm font-bold text-white capitalize">{name.replace("-"," ")}</div>
-          {i < chain.length - 1 && <ArrowRight className="w-4 h-4 text-emerald-500" />}
+    <div className="flex flex-col gap-2">
+      {paths.map((p, i) => (
+        <div key={i} className="flex items-center gap-3 bg-[#0D0D10] border border-white/5 px-4 py-2.5 rounded-xl">
+          <span className="text-white font-bold capitalize text-sm w-24">{p.from.replace("-"," ")}</span>
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-widest text-center">{p.condition}</span>
+            <ArrowRight className="w-4 h-4 text-gray-600" />
+          </div>
+          <span className="text-white font-bold capitalize text-sm w-24 text-right">{p.to.replace("-"," ")}</span>
         </div>
       ))}
     </div>
@@ -210,12 +236,12 @@ function AdvancedPokedexModal({ id, onClose }) {
               </div>
 
               <div>
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3">Evolution Chain</h3>
+                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-widest">Evolution Chain</h3>
                 <EvolutionChain url={species.evolution_chain?.url} />
               </div>
 
               <div>
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3">Abilities</h3>
+                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-widest mt-6">Abilities</h3>
                 {data.abilities.map(a => <AbilityRow key={a.ability.name} name={a.ability.name} isHidden={a.is_hidden} />)}
               </div>
             </div>
@@ -232,6 +258,10 @@ function AdvancedPokedexModal({ id, onClose }) {
                   </div>
                 </div>
               ))}
+              <div className="pt-4 mt-4 border-t border-white/5 flex justify-between items-center px-2">
+                <span className="text-gray-400 uppercase font-bold text-xs tracking-wider">Base Stat Total</span>
+                <span className="font-mono text-emerald-400 font-black text-lg">{data.stats.reduce((acc, s) => acc + s.base_stat, 0)}</span>
+              </div>
             </div>
           )}
 
@@ -267,7 +297,6 @@ export default function PokedexBrowser() {
       .then(data => {
         const entries = data.results.map((r, i) => {
           const id = min + i;
-          // IMPORTANT FIX: Use official-artwork to guarantee Gen 9 Pokemon load
           const sprite = id >= 906 
             ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
             : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
