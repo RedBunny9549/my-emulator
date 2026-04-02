@@ -8,8 +8,11 @@ const DEFAULT_HOTKEYS = {
   quickSave: "F1",
   quickLoad: "F2",
   fastForward: "Space",
-  autoFireA: "KeyP" 
+  autoFireToggle: "KeyP" // The key you press to turn Auto-Fire ON/OFF
 };
+
+// Updated Default Key that actually gets spammed (Now 'E' to match your 'A' button!)
+const DEFAULT_AUTOFIRE_TARGET = { key: "e", code: "KeyE", keyCode: 69 };
 
 export default function PlayPage() {
   const navigate = useNavigate();
@@ -24,25 +27,51 @@ export default function PlayPage() {
       return DEFAULT_HOTKEYS;
     }
   });
+
+  const [autoFireTarget, setAutoFireTarget] = useState(() => {
+    try {
+      const stored = localStorage.getItem("emu_autofire_target");
+      return stored ? JSON.parse(stored) : DEFAULT_AUTOFIRE_TARGET;
+    } catch {
+      return DEFAULT_AUTOFIRE_TARGET;
+    }
+  });
   
   const [showSettings, setShowSettings] = useState(false);
   const [listeningFor, setListeningFor] = useState(null); 
   const [isFastForwarding, setIsFastForwarding] = useState(false);
-  const [autoFireA, setAutoFireA] = useState(false);
+  const [isAutoFiring, setIsAutoFiring] = useState(false);
   
   const romRef = useRef(null);
   const autoFireInterval = useRef(null);
 
+  // --- FORCE EMULATOR DEFAULT CONTROLS (WASD, Q/E, Z/X, Shift/Enter) ---
+  useEffect(() => {
+    window.EJS_defaultControls = {
+      0: { // Player 1
+        up: "KeyW",
+        down: "KeyS",
+        left: "KeyA",
+        right: "KeyD",
+        a: "KeyE",
+        b: "KeyQ",
+        l: "KeyZ",
+        r: "KeyX",
+        select: "ShiftLeft",
+        start: "Enter"
+      }
+    };
+  }, []);
+
   // --- AGGRESSIVE MACRO COMMANDS ---
   const commands = useMemo(() => {
-    // This function acts like a ghost pressing the physical keyboard on the exact game screen
     const triggerKey = (keyCode, code, key) => {
       const payload = { key, code, keyCode, which: keyCode, charCode: keyCode, bubbles: true, composed: true };
       const eventDown = new KeyboardEvent("keydown", payload);
       const eventUp = new KeyboardEvent("keyup", payload);
       
       const canvas = document.querySelector("canvas");
-      const target = canvas || document; // Fallback to document if canvas isn't found
+      const target = canvas || document;
       
       target.dispatchEvent(eventDown);
       window.dispatchEvent(eventDown);
@@ -54,29 +83,28 @@ export default function PlayPage() {
     };
 
     return {
-      quickSave: () => triggerKey(113, "F2", "F2"), // F2 is standard for Savestate Slot 1
-      quickLoad: () => triggerKey(115, "F4", "F4"), // F4 is standard for Loadstate Slot 1
-      openMenu: () => triggerKey(112, "F1", "F1"),  // F1 opens the core emulator settings
+      quickSave: () => triggerKey(113, "F2", "F2"),
+      quickLoad: () => triggerKey(115, "F4", "F4"),
+      openMenu: () => triggerKey(112, "F1", "F1"),
       fastForward: () => {
         triggerKey(32, "Space", " "); 
         setIsFastForwarding((prev) => !prev);
       },
-      autoFireA: () => {
+      autoFireToggle: () => {
         if (autoFireInterval.current) {
           clearInterval(autoFireInterval.current);
           autoFireInterval.current = null;
-          setAutoFireA(false);
+          setIsAutoFiring(false);
         } else {
-          setAutoFireA(true);
+          setIsAutoFiring(true);
           autoFireInterval.current = setInterval(() => {
-            // Fires both X and Z to guarantee it hits the 'A' button across different console cores
-            triggerKey(88, "KeyX", "x"); 
-            triggerKey(90, "KeyZ", "z"); 
+            // ONLY fires the single key the user defined in the settings!
+            triggerKey(autoFireTarget.keyCode, autoFireTarget.code, autoFireTarget.key); 
           }, 50);
         }
       }
     };
-  }, []);
+  }, [autoFireTarget]); // Rebuilds the macro if the user changes the target key
 
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
@@ -100,9 +128,19 @@ export default function PlayPage() {
 
     const handleRemap = (e) => {
       e.preventDefault();
-      const newHotkeys = { ...hotkeys, [listeningFor]: e.code };
-      setHotkeys(newHotkeys);
-      localStorage.setItem("emu_hotkeys", JSON.stringify(newHotkeys));
+      
+      if (listeningFor === "autoFireTarget") {
+        // We need the full key payload for the macro to work
+        const newTarget = { key: e.key, code: e.code, keyCode: e.keyCode };
+        setAutoFireTarget(newTarget);
+        localStorage.setItem("emu_autofire_target", JSON.stringify(newTarget));
+      } else {
+        // Standard HUD hotkeys just need the code
+        const newHotkeys = { ...hotkeys, [listeningFor]: e.code };
+        setHotkeys(newHotkeys);
+        localStorage.setItem("emu_hotkeys", JSON.stringify(newHotkeys));
+      }
+      
       setListeningFor(null);
     };
 
@@ -181,10 +219,10 @@ export default function PlayPage() {
           <span className="text-[9px] font-mono text-gray-600">[{hotkeys.fastForward}]</span>
         </button>
 
-        <button onClick={commands.autoFireA} className={`flex flex-col items-center justify-center gap-1 border p-3 rounded-xl transition-all group ${autoFireA ? "bg-red-500/20 border-red-500/50" : "bg-[#16161A] hover:bg-white/5 border-white/5"}`}>
-          <Play className={`w-5 h-5 ${autoFireA ? "text-red-400 animate-pulse" : "text-red-500 group-hover:scale-110 transition-transform"}`} />
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Auto-Fire A</span>
-          <span className="text-[9px] font-mono text-gray-600">[{hotkeys.autoFireA}]</span>
+        <button onClick={commands.autoFireToggle} className={`flex flex-col items-center justify-center gap-1 border p-3 rounded-xl transition-all group ${isAutoFiring ? "bg-red-500/20 border-red-500/50" : "bg-[#16161A] hover:bg-white/5 border-white/5"}`}>
+          <Play className={`w-5 h-5 ${isAutoFiring ? "text-red-400 animate-pulse" : "text-red-500 group-hover:scale-110 transition-transform"}`} />
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Auto-Fire</span>
+          <span className="text-[9px] font-mono text-gray-600">[{hotkeys.autoFireToggle}]</span>
         </button>
 
         <button onClick={commands.openMenu} className="flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-3 rounded-xl transition-colors group col-span-2 md:col-span-1">
@@ -202,9 +240,8 @@ export default function PlayPage() {
               <button onClick={() => { setShowSettings(false); setListeningFor(null); }} className="p-2 bg-white/5 rounded-full hover:bg-white/10"><X className="w-5 h-5 text-gray-400" /></button>
             </div>
 
-            <div className="space-y-4 mb-6">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2">HUD Hotkeys</h3>
-              <p className="text-[10px] text-gray-500 italic mb-2">Use the "Emu Menu" button to change actual controller/keyboard inputs.</p>
+            <div className="space-y-2 mb-6">
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2 mb-3">HUD Triggers</h3>
               
               {Object.keys(DEFAULT_HOTKEYS).map((action) => (
                 <div key={action} className="flex items-center justify-between bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
@@ -217,6 +254,21 @@ export default function PlayPage() {
                   </button>
                 </div>
               ))}
+            </div>
+
+            <div className="space-y-2 mb-6">
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2 mb-3">Target Button</h3>
+              <p className="text-[10px] text-gray-500 italic mb-2">This is the key Auto-Fire will mash. Currently defaults to 'E' (your 'A' button).</p>
+              
+              <div className="flex items-center justify-between bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
+                <span className="text-sm font-bold text-gray-300">Spammed Key</span>
+                <button 
+                  onClick={() => setListeningFor("autoFireTarget")}
+                  className={`px-4 py-1.5 rounded font-mono text-xs font-bold transition-all ${listeningFor === "autoFireTarget" ? "bg-red-500 text-white animate-pulse" : "bg-gray-800 text-red-400 hover:text-white border border-red-500/20"}`}
+                >
+                  {listeningFor === "autoFireTarget" ? "Press target key..." : autoFireTarget.code}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2 pt-4 border-t border-white/5">
