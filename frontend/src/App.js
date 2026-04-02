@@ -22,9 +22,7 @@ function App() {
 
   const loadRom = (file) => {
     const ext = file.name.toLowerCase().split(".").pop();
-    let core = "mgba";
-    if (ext === "gbc" || ext === "gb") core = "gambatte";
-
+    let core = (ext === "gbc" || ext === "gb") ? "gambatte" : "mgba";
     setRomFile(file);
     setCoreType(core);
     setGameTitle(file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " "));
@@ -32,13 +30,28 @@ function App() {
 
   return (
     <EmuContext.Provider value={{ romFile, biosFile, setBiosFile, gameTitle, coreType, loadRom }}>
-      {/* Use the Mudkip Navy background across all pages */}
-      <div className="App bg-[#0a1628] min-h-screen text-white">
+      {/* Classic Dark/Emerald UI Wrapper */}
+      <div className="App bg-[#0D0D10] min-h-screen text-white">
         <BrowserRouter>
           <Navbar />
-          {/* Main content container with padding to prevent Navbar overlap */}
-          <main className="pt-4">
+          {/* Padding-top ensures Navbar (h-12) doesn't overlap content */}
+          <main className="pt-12">
             <Routes>
-              <Route path="/"            element={<Navigate to="/play" replace />} />
-              <Route path="/play"        element={<PlayPage />} />
-              <Route path="/library"     element={<LibraryPage />} />
+              <Route path="/" element={<Navigate to="/play" replace />} />
+              <Route path="/play" element={<PlayPage />} />
+              <Route path="/library" element={<LibraryPage />} />
+              <Route path="/nuzlocke" element={<NuzlockeList />} />
+              <Route path="/nuzlocke/:runId" element={<NuzlockeRunPage />} />
+              <Route path="/bosses" element={<BossGuide />} />
+              <Route path="/routes" element={<RouteBrowser />} />
+              <Route path="/pokedex" element={<PokedexBrowser />} />
+              <Route path="/coverage" element={<TypeCoverageMap />} />
+            </Routes>
+          </main>
+        </BrowserRouter>
+      </div>
+    </EmuContext.Provider>
+  );
+}
+
+export default App;
