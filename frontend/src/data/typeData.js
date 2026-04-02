@@ -1,91 +1,30 @@
-export const TYPES = [
-  "normal","fire","water","electric","grass","ice",
-  "fighting","poison","ground","flying","psychic","bug",
-  "rock","ghost","dragon","dark","steel","fairy",
-];
+// frontend/src/data/typeData.js
 
 export const TYPE_COLOR = {
-  normal:"#AAAAAA", fire:"#FF4422", water:"#3399FF", electric:"#FFCC33",
-  grass:"#77CC55", ice:"#66CCFF", fighting:"#CC6655", poison:"#AA55AA",
-  ground:"#DDBB55", flying:"#8899FF", psychic:"#FF5599", bug:"#AABB22",
-  rock:"#BBAA66", ghost:"#6655BB", dragon:"#7766EE", dark:"#AA7766",
-  steel:"#AAAABB", fairy:"#EE99EE",
+  normal: "#A8A77A", fire: "#EE8130", water: "#6390F0", electric: "#F7D02C",
+  grass: "#7AC74C", ice: "#96D9D6", fighting: "#C22E28", poison: "#A33EA1",
+  ground: "#E2BF65", flying: "#A98FF3", psychic: "#F95587", bug: "#A6B91A",
+  rock: "#B6A136", ghost: "#735797", dragon: "#6F35FC", dark: "#705898",
+  steel: "#B7B7CE", fairy: "#D685AD"
 };
 
-const GEN1_CHART = {
-  normal:   { rock:0.5, ghost:0 },
-  fire:     { fire:0.5, water:0.5, rock:0.5, dragon:0.5, grass:2, ice:2, bug:2 },
-  water:    { water:0.5, grass:0.5, dragon:0.5, fire:2, ground:2, rock:2 },
-  electric: { electric:0.5, grass:0.5, dragon:0.5, flying:2, water:2, ground:0 },
-  grass:    { fire:0.5, grass:0.5, poison:0.5, flying:0.5, bug:0.5, dragon:0.5, water:2, ground:2, rock:2 },
-  ice:      { water:0.5, ice:0.5, grass:2, ground:2, flying:2, dragon:2 },
-  fighting: { poison:0.5, bug:0.5, flying:0.5, psychic:0.5, ghost:0, normal:2, ice:2, rock:2 },
-  poison:   { poison:0.5, ground:0.5, rock:0.5, ghost:0.5, bug:2, grass:2 },
-  ground:   { grass:0.5, bug:0.5, flying:0, fire:2, electric:2, poison:2, rock:2 },
-  flying:   { electric:0.5, rock:0.5, bug:2, grass:2, fighting:2 },
-  psychic:  { psychic:0.5, ghost:0, fighting:2, poison:2 },
-  bug:      { fire:0.5, fighting:0.5, flying:0.5, grass:2, poison:2, psychic:2 },
-  rock:     { fighting:0.5, ground:0.5, fire:2, ice:2, flying:2, bug:2 },
-  ghost:    { normal:0, psychic:0 },
-  dragon:   { dragon:2 },
-  dark:{}, steel:{}, fairy:{},
+export const TYPE_CHART = {
+  normal: { weak_to: ["fighting"], resists: [], immune_to: ["ghost"] },
+  fire: { weak_to: ["water", "ground", "rock"], resists: ["fire", "grass", "ice", "bug", "steel", "fairy"], immune_to: [] },
+  water: { weak_to: ["electric", "grass"], resists: ["fire", "water", "ice", "steel"], immune_to: [] },
+  electric: { weak_to: ["ground"], resists: ["electric", "flying", "steel"], immune_to: [] },
+  grass: { weak_to: ["fire", "ice", "poison", "flying", "bug"], resists: ["water", "electric", "grass", "ground"], immune_to: [] },
+  ice: { weak_to: ["fire", "fighting", "rock", "steel"], resists: ["ice"], immune_to: [] },
+  fighting: { weak_to: ["flying", "psychic", "fairy"], resists: ["bug", "rock", "dark"], immune_to: [] },
+  poison: { weak_to: ["ground", "psychic"], resists: ["grass", "fighting", "poison", "bug", "fairy"], immune_to: [] },
+  ground: { weak_to: ["water", "grass", "ice"], resists: ["poison", "rock"], immune_to: ["electric"] },
+  flying: { weak_to: ["electric", "ice", "rock"], resists: ["grass", "fighting", "bug"], immune_to: ["ground"] },
+  psychic: { weak_to: ["bug", "ghost", "dark"], resists: ["fighting", "psychic"], immune_to: [] },
+  bug: { weak_to: ["fire", "flying", "rock"], resists: ["grass", "fighting", "ground"], immune_to: [] },
+  rock: { weak_to: ["water", "grass", "fighting", "ground", "steel"], resists: ["normal", "fire", "poison", "flying"], immune_to: [] },
+  ghost: { weak_to: ["ghost", "dark"], resists: ["poison", "bug"], immune_to: ["normal", "fighting"] },
+  dragon: { weak_to: ["ice", "dragon", "fairy"], resists: ["fire", "water", "electric", "grass"], immune_to: [] },
+  dark: { weak_to: ["fighting", "bug", "fairy"], resists: ["ghost", "dark"], immune_to: ["psychic"] },
+  steel: { weak_to: ["fire", "fighting", "ground"], resists: ["normal", "grass", "ice", "flying", "psychic", "bug", "rock", "dragon", "steel", "fairy"], immune_to: ["poison"] },
+  fairy: { weak_to: ["poison", "steel"], resists: ["fighting", "bug", "dark"], immune_to: ["dragon"] }
 };
-
-const GEN2_CHART = {
-  normal:   { rock:0.5, steel:0.5, ghost:0 },
-  fire:     { fire:0.5, water:0.5, rock:0.5, dragon:0.5, grass:2, ice:2, bug:2, steel:2 },
-  water:    { water:0.5, grass:0.5, dragon:0.5, fire:2, ground:2, rock:2 },
-  electric: { electric:0.5, grass:0.5, dragon:0.5, steel:0.5, flying:2, water:2, ground:0 },
-  grass:    { fire:0.5, grass:0.5, poison:0.5, flying:0.5, bug:0.5, dragon:0.5, steel:0.5, water:2, ground:2, rock:2 },
-  ice:      { water:0.5, ice:0.5, steel:0.5, grass:2, ground:2, flying:2, dragon:2 },
-  fighting: { poison:0.5, bug:0.5, flying:0.5, psychic:0.5, ghost:0, normal:2, ice:2, rock:2, dark:2, steel:2 },
-  poison:   { poison:0.5, ground:0.5, rock:0.5, ghost:0.5, steel:0, bug:2, grass:2 },
-  ground:   { grass:0.5, bug:0.5, flying:0, fire:2, electric:2, poison:2, rock:2, steel:2 },
-  flying:   { electric:0.5, rock:0.5, steel:0.5, bug:2, grass:2, fighting:2 },
-  psychic:  { psychic:0.5, steel:0.5, dark:0, fighting:2, poison:2 },
-  bug:      { fire:0.5, fighting:0.5, flying:0.5, ghost:0.5, steel:0.5, grass:2, psychic:2, dark:2 },
-  rock:     { fighting:0.5, ground:0.5, steel:0.5, fire:2, ice:2, flying:2, bug:2 },
-  ghost:    { normal:0, dark:0.5, psychic:2, ghost:2 },
-  dragon:   { steel:0.5, dragon:2 },
-  dark:     { fighting:0.5, dark:0.5, psychic:2, ghost:2 },
-  steel:    { fire:0.5, water:0.5, electric:0.5, steel:0.5, normal:0.5, grass:0.5,
-              flying:0.5, psychic:0.5, bug:0.5, ghost:0.5, dragon:0.5, dark:0.5,
-              poison:0, rock:2, ice:2 },
-  fairy:    {},
-};
-
-const GEN6_CHART = {
-  ...GEN2_CHART,
-  fairy:    { fire:0.5, poison:0.5, steel:0.5, fighting:2, dragon:2, dark:2 },
-  dragon:   { steel:0.5, dragon:2, fairy:0 },
-  dark:     { fighting:0.5, dark:0.5, fairy:0.5, psychic:2, ghost:2 },
-  fighting: { poison:0.5, bug:0.5, flying:0.5, psychic:0.5, ghost:0, fairy:0.5, dark:2, normal:2, ice:2, rock:2, steel:2 },
-  poison:   { poison:0.5, ground:0.5, rock:0.5, ghost:0.5, steel:0, bug:2, grass:2, fairy:2 },
-};
-
-export function getChart(gen) {
-  if (gen <= 1) return GEN1_CHART;
-  if (gen <= 5) return GEN2_CHART;
-  return GEN6_CHART;
-}
-
-export function getMultiplier(attacking, defending, gen = 6) {
-  const chart = getChart(gen);
-  return chart[attacking]?.[defending] ?? 1;
-}
-
-export function getDefenseMatchups(types, gen = 6) {
-  const result = {};
-  for (const atk of TYPES) {
-    let mult = 1;
-    for (const def of types) mult *= getMultiplier(atk, def, gen);
-    result[atk] = mult;
-  }
-  return result;
-}
-
-export const GEN_OPTIONS = [
-  { label: "Gen 1 (RBY)", value: 1 },
-  { label: "Gen 2–5 (GSC–BW)", value: 2 },
-  { label: "Gen 6+ (XY–SV)", value: 6 },
-];
