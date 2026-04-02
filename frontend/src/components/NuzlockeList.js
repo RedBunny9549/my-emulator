@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Plus, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
 import axios from "axios";
@@ -12,11 +12,8 @@ export default function NuzlockeList() {
 
   const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
 
-  useEffect(() => {
-    fetchRuns();
-  }, []);
-
-  const fetchRuns = async () => {
+  // FIX: Wrapped fetchRuns in useCallback to satisfy ESLint dependency rules
+  const fetchRuns = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axios.get(`${API_URL}/api/nuzlocke/runs`);
@@ -28,7 +25,12 @@ export default function NuzlockeList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL]);
+
+  // FIX: Added fetchRuns to the dependency array
+  useEffect(() => {
+    fetchRuns();
+  }, [fetchRuns]);
 
   const createRun = async () => {
     try {
