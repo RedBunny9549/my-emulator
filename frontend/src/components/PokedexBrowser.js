@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, Loader2, X, Info } from "lucide-react";
 
-// Nuzlocke Tiers
 const FIXED_TIERS = {
   mewtwo:"S", rayquaza:"S", kyogre:"S", groudon:"S", lugia:"S", "ho-oh":"S",
   garchomp:"S", salamence:"S", metagross:"S", tyranitar:"S",
@@ -131,7 +130,7 @@ function AdvancedPokedexModal({ id, onClose }) {
 
           {activeTab === "moves" && (
             <div>
-              <p className="text-xs text-gray-500 uppercase font-bold mb-4">Level-Up Moves (Most Recent Gen)</p>
+              <p className="text-xs text-gray-500 uppercase font-bold mb-4">Level-Up Moves</p>
               <div className="grid grid-cols-1 gap-2">
                 {data.moves
                   .filter(m => m.version_group_details[0].move_learn_method.name === "level-up")
@@ -209,7 +208,7 @@ export default function PokedexBrowser() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search Pokémon..." 
-          className="w-full bg-[#16161A] border border-white/5 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-emerald-500/50 text-white transition-colors"
+          className="w-full bg-[#16161A] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-emerald-500/50 text-white transition-colors"
         />
       </div>
 
