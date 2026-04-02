@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Cpu, Gamepad2, FileUp, RefreshCw, Save, Download, FastForward, Play, Settings, X, HardDrive } from "lucide-react";
 import Emulator from "./Emulator";
@@ -28,8 +28,8 @@ export default function PlayPage() {
   const biosRef = useRef(null);
   const autoFireInterval = useRef(null);
 
-  // --- EMULATOR COMMANDS ---
-  const commands = {
+  // --- EMULATOR COMMANDS (FIXED with useMemo) ---
+  const commands = useMemo(() => ({
     quickSave: () => window.EJS_emulator?.gameManager?.quickSave(),
     quickLoad: () => window.EJS_emulator?.gameManager?.quickLoad(),
     fastForward: () => {
@@ -58,7 +58,7 @@ export default function PlayPage() {
         }, 50);
       }
     }
-  };
+  }), []); // Empty dependency array means this object is safely created only once!
 
   // --- GLOBAL HOTKEY LISTENER ---
   useEffect(() => {
@@ -196,27 +196,4 @@ export default function PlayPage() {
               
               {Object.keys(DEFAULT_HOTKEYS).map((action) => (
                 <div key={action} className="flex items-center justify-between bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
-                  <span className="text-sm font-bold text-gray-300 capitalize">{action.replace(/([A-Z])/g, ' $1').trim()}</span>
-                  <button 
-                    onClick={() => setListeningFor(action)}
-                    className={`px-4 py-1.5 rounded font-mono text-xs font-bold transition-all ${listeningFor === action ? "bg-emerald-500 text-white animate-pulse" : "bg-gray-800 text-gray-400 hover:text-white"}`}
-                  >
-                    {listeningFor === action ? "Press any key..." : hotkeys[action]}
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-2 pt-4 border-t border-white/5">
-               <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.zip" className="hidden" onChange={handleRomChange} />
-               <button onClick={() => romRef.current?.click()} className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors">
-                 <FileUp className="w-5 h-5" /> Change ROM File
-               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
-}
+                  <span className="text-sm font-bold text-gray-300 capitalize">{action.replace(/([A-Z])/
