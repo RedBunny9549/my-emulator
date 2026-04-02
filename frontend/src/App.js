@@ -7,6 +7,7 @@ import BossGuide from "./components/BossGuide";
 import RouteBrowser from "./components/RouteBrowser";
 import PokedexBrowser from "./components/PokedexBrowser";
 import TypeCoverageMap from "./components/TypeCoverageMap";
+import DatabaseBrowser from "./components/DatabaseBrowser";
 import Navbar from "./components/Navbar";
 
 export const EmuContext = createContext(null);
@@ -21,24 +22,9 @@ function App() {
   const loadRom = (file) => {
     const ext = file.name.toLowerCase().split(".").pop();
     const core = (ext === "gbc" || ext === "gb") ? "gambatte" : "mgba";
-    
     setRomFile(file);
     setCoreType(core);
     setGameTitle(file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " "));
-
-    try {
-      const stored = JSON.parse(localStorage.getItem("recent_roms") || "[]");
-      const existing = stored.find((r) => r.name === file.name);
-      const entry = {
-        name: file.name,
-        size: file.size,
-        lastPlayed: Date.now(),
-        core,
-        playCount: existing ? (existing.playCount || 1) + 1 : 1,
-      };
-      const filtered = stored.filter((r) => r.name !== file.name);
-      localStorage.setItem("recent_roms", JSON.stringify([entry, ...filtered].slice(0, 10)));
-    } catch (_) {}
   };
 
   return (
@@ -55,11 +41,7 @@ function App() {
               <Route path="/routes"      element={<RouteBrowser />} />
               <Route path="/pokedex"     element={<PokedexBrowser />} />
               <Route path="/coverage"    element={<TypeCoverageMap />} />
-              
-              {/* SAFTEY NETS: Redirect old nuzlocke links to the Boss Guide */}
-              <Route path="/nuzlocke/*"  element={<Navigate to="/bosses" replace />} />
-              
-              {/* Catch-all for any other broken links */}
+              <Route path="/database"    element={<DatabaseBrowser />} />
               <Route path="*"            element={<Navigate to="/play" replace />} />
             </Routes>
           </main>
