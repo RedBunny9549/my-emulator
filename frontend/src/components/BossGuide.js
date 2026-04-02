@@ -15,7 +15,46 @@ function getTrainerSprite(leader) {
   return `https://play.pokemonshowdown.com/sprites/trainers/${map[cleanName] || cleanName}.png`;
 }
 
-// Reusable Move Row that fetches from API
+// --- Interactive Ability Row for Bosses ---
+function AbilityRow({ abilityName }) {
+  const [data, setData] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const toggle = async () => {
+    if (!open && !data) {
+      setLoading(true);
+      try {
+        const formattedName = abilityName.toLowerCase().replace(/\s/g, "-");
+        const res = await fetch(`https://pokeapi.co/api/v2/ability/${formattedName}`);
+        const json = await res.json();
+        const effect = json.effect_entries.find(e => e.language.name === "en")?.short_effect || "No description available.";
+        setData(effect);
+      } catch (err) { setData("Failed to load ability data."); }
+      setLoading(false);
+    }
+    setOpen(!open);
+  };
+
+  return (
+    <div className="bg-[#0D0D10] border border-white/5 rounded-xl mb-4 overflow-hidden transition-all">
+      <button onClick={toggle} className="w-full px-4 py-3 flex justify-between items-center hover:bg-white/5">
+        <div className="flex items-center gap-3">
+          <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">Ability</span>
+          <span className="text-white font-bold capitalize text-sm">{abilityName}</span>
+        </div>
+        {loading ? <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" /> : open ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+      </button>
+      {open && data && (
+        <div className="px-4 pb-4 text-sm text-gray-400 border-t border-white/5 pt-3 bg-black/20 leading-relaxed">
+          {data}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Interactive Move Row for Bosses ---
 function MoveRow({ moveName }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
@@ -49,11 +88,11 @@ function MoveRow({ moveName }) {
       {open && data && (
         <div className="px-4 pb-4 pt-3 border-t border-white/5 bg-black/20">
           <div className="flex gap-4 mb-3">
-             <div className="bg-gray-900 px-3 py-1.5 rounded-lg"><p className="text-[9px] text-gray-500 uppercase font-bold">Class</p><p className="text-xs font-bold text-white capitalize">{data.category}</p></div>
-             <div className="bg-gray-900 px-3 py-1.5 rounded-lg"><p className="text-[9px] text-gray-500 uppercase font-bold">Power</p><p className="text-xs font-bold text-white font-mono">{data.power}</p></div>
-             <div className="bg-gray-900 px-3 py-1.5 rounded-lg"><p className="text-[9px] text-gray-500 uppercase font-bold">Acc</p><p className="text-xs font-bold text-white font-mono">{data.acc}</p></div>
+             <div className="bg-gray-900 px-3 py-1.5 rounded-lg border border-white/5"><p className="text-[9px] text-gray-500 uppercase font-bold">Class</p><p className="text-xs font-bold text-white capitalize">{data.category}</p></div>
+             <div className="bg-gray-900 px-3 py-1.5 rounded-lg border border-white/5"><p className="text-[9px] text-gray-500 uppercase font-bold">Power</p><p className="text-xs font-bold text-white font-mono">{data.power}</p></div>
+             <div className="bg-gray-900 px-3 py-1.5 rounded-lg border border-white/5"><p className="text-[9px] text-gray-500 uppercase font-bold">Acc</p><p className="text-xs font-bold text-white font-mono">{data.acc}</p></div>
           </div>
-          <p className="text-sm text-gray-400 italic">{data.effect}</p>
+          <p className="text-sm text-gray-400 italic leading-relaxed">{data.effect}</p>
         </div>
       )}
     </div>
@@ -63,7 +102,6 @@ function MoveRow({ moveName }) {
 function BossPokemonModal({ pokemon, onClose }) {
   const [data, setData] = useState(null);
 
-  // SCROLL LOCK EFFECT
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = 'unset'; };
@@ -76,7 +114,7 @@ function BossPokemonModal({ pokemon, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[#16161A] border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
+      <div className="bg-[#16161A] border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={e=>e.stopPropagation()}>
         <div className="flex justify-between items-start mb-4">
           <div>
             <h2 className="text-2xl font-black text-white capitalize tracking-tight">{pokemon.name}</h2>
@@ -89,15 +127,20 @@ function BossPokemonModal({ pokemon, onClose }) {
           <div>
             <img src={data.sprites.other["official-artwork"]?.front_default || data.sprites.front_default} className="w-32 h-32 mx-auto drop-shadow-xl" alt={pokemon.name} />
             
-            <div className="mt-4 bg-[#0D0D10] border border-white/5 p-4 rounded-xl mb-4">
-              <p className="text-xs text-gray-500 font-bold uppercase mb-1">Ability Used</p>
-              <p className="text-sm text-white font-bold capitalize">{pokemon.ability || "Unknown"}</p>
+            <div className="mt-4">
+              {pokemon.ability ? (
+                <AbilityRow abilityName={pokemon.ability} />
+              ) : (
+                <div className="bg-[#0D0D10] border border-white/5 p-4 rounded-xl mb-4 text-center">
+                  <p className="text-xs text-gray-500 italic">No specific historical ability recorded.</p>
+                </div>
+              )}
             </div>
 
             <div className="mb-2">
               <div className="flex items-center gap-2 mb-3">
                 <Crosshair className="w-4 h-4 text-emerald-500" />
-                <p className="text-xs text-white font-bold uppercase tracking-widest">Moveset</p>
+                <p className="text-xs text-white font-bold uppercase tracking-widest">Historical Moveset</p>
               </div>
               
               {pokemon.moves && pokemon.moves.length > 0 ? (
@@ -125,7 +168,6 @@ export default function BossGuide() {
 
   return (
     <div className="max-w-6xl mx-auto px-4">
-      {/* Rest of BossGuide remains identical */}
       <div className="flex items-center gap-3 mb-8">
         <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-[#16161A] border border-emerald-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/10">
           <BookOpen className="w-6 h-6 text-emerald-400" />
@@ -135,16 +177,19 @@ export default function BossGuide() {
           <p className="text-gray-500 text-sm">Gym leaders, Elite Four & Champions</p>
         </div>
       </div>
+      
       <div className="flex gap-2 mb-6 flex-wrap">
         {Object.entries(GAME_LABELS).map(([key, { name, color, bg, border }]) => (
           <button key={key} onClick={() => setGame(key)} className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-all shadow-sm ${game === key ? `${bg} ${border} ${color} shadow-lg scale-105` : "bg-[#16161A] border-white/5 text-gray-400 hover:text-white"}`}>{name}</button>
         ))}
       </div>
+      
       <div className="flex border-b border-white/10 mb-8">
         {[{ id: "gyms", label: "Gym Leaders" }, { id: "elite", label: "Elite Four & Champion" }].map(({ id, label }) => (
           <button key={id} onClick={() => setSection(id)} className={`px-6 py-4 text-sm font-bold border-b-2 -mb-px transition-colors ${section === id ? "border-emerald-400 text-emerald-400" : "border-transparent text-gray-500 hover:text-white"}`}>{label}</button>
         ))}
       </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {bosses.map(boss => (
           <div key={boss.leader} className="bg-[#16161A] border border-white/5 rounded-3xl p-6 flex flex-col sm:flex-row gap-6 shadow-xl hover:border-white/10 transition-colors">
@@ -159,7 +204,7 @@ export default function BossGuide() {
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {boss.team.map((p, i) => (
                   <button key={i} onClick={() => setSelectedPokemon(p)} className="flex flex-col items-center bg-[#0D0D10] hover:bg-emerald-500/10 transition-all cursor-pointer rounded-xl p-3 border border-white/5 shadow-sm">
-                    <img src={`https://img.pokemondb.net/sprites/emerald/normal/${p.name.toLowerCase()}.png`} className="w-10 h-10 pixelated drop-shadow-md mb-2" title={p.name} />
+                    <img src={`https://img.pokemondb.net/sprites/emerald/normal/${p.name.toLowerCase()}.png`} className="w-10 h-10 pixelated drop-shadow-md mb-2" title={p.name} onError={(e) => e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'} />
                     <span className="text-[10px] text-gray-400 font-black font-mono">LV.{p.level}</span>
                   </button>
                 ))}
