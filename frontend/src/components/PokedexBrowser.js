@@ -14,6 +14,7 @@ const GEN_RANGES = {
   0: { min:1, max:1025, name:"All" }
 };
 
+// --- Interactive Ability Row ---
 function AbilityRow({ name, isHidden }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
@@ -51,6 +52,7 @@ function AbilityRow({ name, isHidden }) {
   );
 }
 
+// --- Interactive Move Row ---
 function MoveRow({ moveName, level }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
@@ -179,6 +181,12 @@ function AdvancedPokedexModal({ id, onClose }) {
   const [species, setSpecies] = useState(null);
   const [activeTab, setActiveTab] = useState("info");
 
+  // SCROLL LOCK EFFECT
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
+
   useEffect(() => {
     Promise.all([
       fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(r=>r.json()),
@@ -226,7 +234,7 @@ function AdvancedPokedexModal({ id, onClose }) {
           ))}
         </div>
 
-        <div className="p-6 overflow-y-auto">
+        <div className="p-6 overflow-y-auto custom-scrollbar">
           {activeTab === "info" && (
             <div className="space-y-6">
               <img src={data.sprites.other["official-artwork"].front_default || data.sprites.front_default} className="w-40 h-40 mx-auto drop-shadow-xl pixelated" alt={data.name} />
@@ -297,6 +305,7 @@ export default function PokedexBrowser() {
       .then(data => {
         const entries = data.results.map((r, i) => {
           const id = min + i;
+          // IMPORTANT FIX: Use official-artwork to guarantee Gen 9 Pokemon load
           const sprite = id >= 906 
             ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
             : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
