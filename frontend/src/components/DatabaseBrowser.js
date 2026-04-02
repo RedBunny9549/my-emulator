@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search, Loader2, Database } from "lucide-react";
+import { Search, Loader2, Database, Filter } from "lucide-react";
+
+const MOVE_TYPES = ["normal", "fire", "water", "grass", "electric", "ice", "fighting", "poison", "ground", "flying", "psychic", "bug", "rock", "ghost", "dark", "dragon", "steel", "fairy"];
+const ITEM_CATEGORIES = ["healing", "status-cures", "revival", "pp-recovery", "stat-boosts", "evolution", "standard-balls", "special-balls", "held-items", "choice", "effort-training", "plates", "species-specific", "type-enhancement", "mega-stones"];
 
 export default function DatabaseBrowser() {
   const [tab, setTab] = useState("moves");
@@ -7,33 +10,53 @@ export default function DatabaseBrowser() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
+  
+  // Filter States
+  const [filterType, setFilterType] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
 
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
-    setSearch("");
     setSelected(null);
     
-    const endpoint = tab === "moves" ? "move" : tab === "abilities" ? "ability" : "item";
+    const fetchList = async () => {
+      try {
+        let results = [];
+        
+        // Filter Logic for Moves
+        if (tab === "moves" && filterType !== "all") {
+          const res = await fetch(`https://pokeapi.co/api/v2/type/${filterType}`);
+          const data = await res.json();
+          results = data.moves.map(m => m.move); // Normalize nested objects
+        } 
+        // Filter Logic for Items
+        else if (tab === "items" && filterCategory !== "all") {
+          const res = await fetch(`https://pokeapi.co/api/v2/item-category/${filterCategory}`);
+          const data = await res.json();
+          results = data.items.map(i => i.item); // Normalize nested objects
+        } 
+        // Standard full list fetching
+        else {
+          const endpoint = tab === "moves" ? "move" : tab === "abilities" ? "ability" : "item";
+          const res = await fetch(`https://pokeapi.co/api/v2/${endpoint}?limit=2000`);
+          const data = await res.json();
+          results = data.results;
+        }
 
-    fetch(`https://pokeapi.co/api/v2/${endpoint}?limit=2000`)
-      .then(r => {
-        if (!r.ok) throw new Error("API request failed");
-        return r.json();
-      })
-      .then(data => {
         if (isMounted) {
-          setList(data.results);
+          setList(results);
           setLoading(false);
         }
-      })
-      .catch(err => {
+      } catch (err) {
         console.error("Failed to load list:", err);
         if (isMounted) setLoading(false);
-      });
+      }
+    };
 
+    fetchList();
     return () => { isMounted = false; };
-  }, [tab]);
+  }, [tab, filterType, filterCategory]);
 
   const loadDetails = async (url) => {
     setSelected(null);
@@ -63,18 +86,45 @@ export default function DatabaseBrowser() {
 
       <div className="flex gap-2 mb-6">
         {["moves", "abilities", "items"].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-all capitalize ${tab === t ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-[#16161A] border-white/5 text-gray-400 hover:text-white"}`}>
+          <button 
+            key={t} 
+            onClick={() => { setTab(t); setSearch(""); setFilterType("all"); setFilterCategory("all"); }} 
+            className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-all capitalize ${tab === t ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-[#16161A] border-white/5 text-gray-400 hover:text-white"}`}
+          >
             {t}
           </button>
         ))}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left Side: Searchable List */}
+        {/* Left Side: Search & Filters */}
         <div className="lg:w-1/2 flex flex-col gap-4 h-[60vh]">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ${tab}...`} className="w-full bg-[#16161A] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-emerald-500/50 text-white transition-colors" />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ${tab}...`} className="w-full bg-[#16161A] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-emerald-500/50 text-white transition-colors" />
+            </div>
+
+            {/* Dynamic Filter Dropdowns */}
+            {tab === "moves" && (
+              <div className="relative w-1/3">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="w-full bg-[#16161A] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-emerald-500/50 text-white capitalize appearance-none cursor-pointer">
+                  <option value="all">All Types</option>
+                  {MOVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            )}
+
+            {tab === "items" && (
+              <div className="relative w-1/3">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="w-full bg-[#16161A] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-emerald-500/50 text-white capitalize appearance-none cursor-pointer truncate">
+                  <option value="all">All Items</option>
+                  {ITEM_CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/-/g, " ")}</option>)}
+                </select>
+              </div>
+            )}
           </div>
           
           <div className="flex-1 overflow-y-auto bg-[#16161A] border border-white/5 rounded-2xl p-2 space-y-1 custom-scrollbar">
