@@ -28,20 +28,20 @@ export default function DatabaseBrowser() {
         if (tab === "moves" && filterType !== "all") {
           const res = await fetch(`https://pokeapi.co/api/v2/type/${filterType}`);
           const data = await res.json();
-          results = data.moves.map(m => m.move); // Normalize nested objects
+          results = data.moves || []; // Fixed: PokeAPI already returns an array of {name, url}
         } 
         // Filter Logic for Items
         else if (tab === "items" && filterCategory !== "all") {
           const res = await fetch(`https://pokeapi.co/api/v2/item-category/${filterCategory}`);
           const data = await res.json();
-          results = data.items.map(i => i.item); // Normalize nested objects
+          results = data.items || []; // Fixed: PokeAPI already returns an array of {name, url}
         } 
         // Standard full list fetching
         else {
           const endpoint = tab === "moves" ? "move" : tab === "abilities" ? "ability" : "item";
           const res = await fetch(`https://pokeapi.co/api/v2/${endpoint}?limit=2000`);
           const data = await res.json();
-          results = data.results;
+          results = data.results || [];
         }
 
         if (isMounted) {
@@ -70,7 +70,8 @@ export default function DatabaseBrowser() {
     }
   };
 
-  const filtered = list.filter(i => i.name.includes(search.toLowerCase().replace(/\s/g, "-")));
+  // Safe filtering using optional chaining to prevent undefined crashes
+  const filtered = list.filter(i => i?.name?.includes(search.toLowerCase().replace(/\s/g, "-")));
 
   return (
     <div className="max-w-6xl mx-auto px-4">
