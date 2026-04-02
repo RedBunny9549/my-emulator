@@ -35,7 +35,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#0D0D10] border-b border-white/5">
+    <nav className="sticky top-0 z-50 bg-mudkip-navy border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center h-12 gap-1">
           <div className="flex items-center gap-0.5 flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
@@ -45,8 +45,8 @@ export default function Navbar() {
                 to={to}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
                   isActive(to)
-                    ? "bg-emerald-500/10 text-emerald-400"
-                    : "text-gray-500 hover:text-gray-200 hover:bg-white/5"
+                    ? "bg-mudkip-blue/20 text-mudkip-blue"
+                    : "text-gray-400 hover:text-mudkip-light hover:bg-white/5"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -57,7 +57,7 @@ export default function Navbar() {
           <input ref={fileRef} type="file" accept=".gb,.gbc,.gba" className="hidden" onChange={handleFileChange} />
           <button
             onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-all flex-shrink-0"
+            className="flex items-center gap-1.5 bg-mudkip-orange hover:bg-mudkip-orange/90 active:scale-95 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-all flex-shrink-0 shadow-lg shadow-mudkip-orange/20"
           >
             <Upload className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Load ROM</span>
