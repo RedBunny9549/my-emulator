@@ -48,7 +48,6 @@ function App() {
       <div className="App min-h-screen bg-[#0A0A0C] text-white">
         <BrowserRouter>
           <Navbar />
-          {/* pt-6 ensures content isn't hidden under the sticky navbar */}
           <main className="pt-6 pb-12">
             <Routes>
               <Route path="/"            element={<Navigate to="/play" replace />} />
