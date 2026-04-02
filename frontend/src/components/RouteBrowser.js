@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Map, Search, X, Loader2 } from "lucide-react";
 import { ENCOUNTER_TABLES } from "../data/encounterTables";
 
-// In-line pokemon modal so clicking a route pokemon opens a stats HUD
 function RoutePokemonDetail({ name, onClose }) {
   const [data, setData] = useState(null);
   useEffect(() => {
@@ -46,6 +45,7 @@ export default function RouteBrowser() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
 
+  // Safely grab routes for the selected game
   const routes = ENCOUNTER_TABLES[game] || {};
   
   return (
@@ -69,34 +69,37 @@ export default function RouteBrowser() {
         />
       </div>
 
-      <div className="space-y-3">
-        {Object.entries(routes).filter(([r, p]) => r.toLowerCase().includes(search.toLowerCase()) || p.join(" ").toLowerCase().includes(search.toLowerCase())).map(([routeName, pokemon]) => (
-          <div key={routeName} className="bg-[#16161A] border border-white/5 rounded-2xl overflow-hidden">
-            <button 
-              onClick={() => setExpanded(prev => ({...prev, [routeName]: !prev[routeName]}))}
-              className="w-full flex justify-between items-center p-5 hover:bg-white/5 transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-emerald-500/10 rounded-lg"><Map className="text-emerald-500 w-5 h-5" /></div>
-                {/* Fixed capitalization here using Tailwind "capitalize" */}
-                <span className="font-bold text-lg capitalize tracking-tight text-white">{routeName}</span>
-              </div>
-              {expanded[routeName] ? <ChevronUp className="text-gray-500" /> : <ChevronDown className="text-gray-500" />}
-            </button>
-            
-            {expanded[routeName] && (
-              <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 bg-black/20 border-t border-white/5">
-                {pokemon.map(p => (
-                  <button key={p} onClick={() => setSelected(p)} className="flex flex-col items-center bg-[#0D0D10] p-3 rounded-xl border border-white/5 hover:border-emerald-500/50 transition-colors">
-                    <img src={`https://img.pokemondb.net/sprites/emerald/normal/${p.toLowerCase().replace(/\s/g, '-')}.png`} className="w-12 h-12 pixelated" alt={p} onError={(e) => e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'} />
-                    <span className="text-[10px] font-bold capitalize mt-2 text-gray-400">{p}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+      {Object.keys(routes).length === 0 ? (
+        <div className="text-center py-10 text-gray-500">No route data available for this game.</div>
+      ) : (
+        <div className="space-y-3">
+          {Object.entries(routes).filter(([r, p]) => r.toLowerCase().includes(search.toLowerCase()) || p.join(" ").toLowerCase().includes(search.toLowerCase())).map(([routeName, pokemon]) => (
+            <div key={routeName} className="bg-[#16161A] border border-white/5 rounded-2xl overflow-hidden">
+              <button 
+                onClick={() => setExpanded(prev => ({...prev, [routeName]: !prev[routeName]}))}
+                className="w-full flex justify-between items-center p-5 hover:bg-white/5 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-emerald-500/10 rounded-lg"><Map className="text-emerald-500 w-5 h-5" /></div>
+                  <span className="font-bold text-lg capitalize tracking-tight text-white">{routeName}</span>
+                </div>
+                {expanded[routeName] ? <ChevronUp className="text-gray-500" /> : <ChevronDown className="text-gray-500" />}
+              </button>
+              
+              {expanded[routeName] && (
+                <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 bg-black/20 border-t border-white/5">
+                  {pokemon.map(p => (
+                    <button key={p} onClick={() => setSelected(p)} className="flex flex-col items-center bg-[#0D0D10] p-3 rounded-xl border border-white/5 hover:border-emerald-500/50 transition-colors">
+                      <img src={`https://img.pokemondb.net/sprites/emerald/normal/${p.toLowerCase().replace(/\s/g, '-')}.png`} className="w-12 h-12 pixelated" alt={p} onError={(e) => e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'} />
+                      <span className="text-[10px] font-bold capitalize mt-2 text-gray-400">{p}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       {selected && <RoutePokemonDetail name={selected} onClose={() => setSelected(null)} />}
     </div>
   );
