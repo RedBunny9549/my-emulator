@@ -55,6 +55,12 @@ function App() {
               <Route path="/routes"      element={<RouteBrowser />} />
               <Route path="/pokedex"     element={<PokedexBrowser />} />
               <Route path="/coverage"    element={<TypeCoverageMap />} />
+              
+              {/* SAFTEY NETS: Redirect old nuzlocke links to the Boss Guide */}
+              <Route path="/nuzlocke/*"  element={<Navigate to="/bosses" replace />} />
+              
+              {/* Catch-all for any other broken links */}
+              <Route path="*"            element={<Navigate to="/play" replace />} />
             </Routes>
           </main>
         </BrowserRouter>
