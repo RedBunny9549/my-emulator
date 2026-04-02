@@ -10,7 +10,7 @@ export default function RouteBrowser() {
   const routes = ENCOUNTER_TABLES[game] || {};
   
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-emerald-500">Route Browser</h1>
         <div className="flex bg-white/5 p-1 rounded-lg border border-white/10">
@@ -19,8 +19,18 @@ export default function RouteBrowser() {
         </div>
       </div>
 
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <input 
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search routes..." 
+          className="w-full bg-[#16161A] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-emerald-500/50 text-white"
+        />
+      </div>
+
       <div className="space-y-3">
-        {Object.entries(routes).map(([routeName, pokemon]) => (
+        {Object.entries(routes).filter(([r, p]) => r.toLowerCase().includes(search.toLowerCase()) || p.join(" ").toLowerCase().includes(search.toLowerCase())).map(([routeName, pokemon]) => (
           <div key={routeName} className="bg-[#16161A] border border-white/5 rounded-2xl overflow-hidden">
             <button 
               onClick={() => setExpanded(prev => ({...prev, [routeName]: !prev[routeName]}))}
@@ -30,9 +40,10 @@ export default function RouteBrowser() {
                 <div className="p-2 bg-emerald-500/10 rounded-lg">
                   <Map className="text-emerald-500 w-5 h-5" />
                 </div>
-                <span className="font-bold text-lg uppercase tracking-tight">{routeName}</span>
+                {/* FIX: lowercase class forces names to look like "route 101" instead of "Route 101" */}
+                <span className="font-bold text-lg lowercase tracking-tight text-white">{routeName}</span>
               </div>
-              {expanded[routeName] ? <ChevronUp /> : <ChevronDown />}
+              {expanded[routeName] ? <ChevronUp className="text-gray-500" /> : <ChevronDown className="text-gray-500" />}
             </button>
             
             {expanded[routeName] && (
