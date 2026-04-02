@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, Loader2, X, ChevronDown, ChevronUp, ArrowRight, Layers } from "lucide-react";
 
-// (Keep your GEN_RANGES, AbilityRow, MoveRow, and EvolutionChain components exactly as they were here)
 const GEN_RANGES = {
   1: { min:1, max:151, name:"Gen I" },
   2: { min:152, max:251, name:"Gen II" },
@@ -63,7 +62,7 @@ function MoveRow({ moveName, level }) {
         const json = await res.json();
         setData({
           type: json.type.name, category: json.damage_class.name, power: json.power || "-", acc: json.accuracy || "-", pp: json.pp,
-          effect: json.effect_entries.find(e => e.language.name === "en")?.short_effect.replace("$effect_chance", json.effect_chance) || "No effect."
+          effect: json.effect_entries?.find(e => e.language.name === "en")?.short_effect.replace("$effect_chance", json.effect_chance || "") || "No effect."
         });
       } catch (err) { setData({ effect: "Failed to load move data." }); }
       setLoading(false);
@@ -183,7 +182,23 @@ function AdvancedPokedexModal({ id, onClose }) {
     <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500 w-8 h-8" /></div>
   );
 
-  const flavorText = species.flavor_text_entries.find(f => f.language.name === "en")?.flavor_text.replace(/\f/g, " ");
+  const flavorText = species.flavor_text_entries?.find(f => f.language.name === "en")?.flavor_text.replace(/\f/g, " ");
+
+  // Safely extract level-up moves, skipping over empty datasets from Mega Evolutions
+  const levelUpMoves = (data.moves || [])
+    .map(m => {
+      const detail = m.version_group_details?.find(v => v.move_learn_method?.name === "level-up");
+      if (!detail) return null;
+      return { name: m.move.name, level: detail.level_learned_at };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.level - b.level);
+
+  // The Ultimate Image Fallback Chain
+  const displaySprite = data.sprites?.other?.["official-artwork"]?.front_default 
+                     || data.sprites?.other?.home?.front_default 
+                     || data.sprites?.front_default 
+                     || "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={onClose}>
@@ -198,7 +213,7 @@ function AdvancedPokedexModal({ id, onClose }) {
             <button onClick={onClose} className="p-2 bg-white/5 rounded-full hover:bg-white/10"><X className="text-gray-400 w-5 h-5" /></button>
           </div>
           <div className="flex gap-2 mb-4">
-            {data.types.map(t => <span key={t.type.name} className="px-3 py-1 bg-gray-800 text-white text-xs font-bold uppercase rounded border border-gray-600">{t.type.name}</span>)}
+            {data.types?.map(t => <span key={t.type.name} className="px-3 py-1 bg-gray-800 text-white text-xs font-bold uppercase rounded border border-gray-600">{t.type.name}</span>)}
           </div>
         </div>
 
@@ -215,14 +230,15 @@ function AdvancedPokedexModal({ id, onClose }) {
           
           {activeTab === "info" && (
             <div className="space-y-6">
-              <img src={data.sprites.other["official-artwork"]?.front_default || data.sprites.front_default} className="w-40 h-40 mx-auto drop-shadow-xl pixelated" alt={data.name} />
+              <img src={displaySprite} className="w-40 h-40 mx-auto drop-shadow-xl pixelated" alt={data.name} />
               
-              <div className="bg-[#0D0D10] p-4 rounded-xl border border-white/5">
-                <p className="text-gray-300 text-sm leading-relaxed italic">"{flavorText}"</p>
-              </div>
+              {flavorText && (
+                <div className="bg-[#0D0D10] p-4 rounded-xl border border-white/5">
+                  <p className="text-gray-300 text-sm leading-relaxed italic">"{flavorText}"</p>
+                </div>
+              )}
 
-              {/* Alternate Forms Feature */}
-              {species.varieties.length > 1 && (
+              {species.varieties?.length > 1 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3 mt-6">
                     <Layers className="w-4 h-4 text-emerald-500" />
@@ -230,7 +246,6 @@ function AdvancedPokedexModal({ id, onClose }) {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {species.varieties.map(v => {
-                      // Formatting the form name to look clean (e.g. "Rotom-Wash" -> "Wash")
                       const rawName = v.pokemon.name;
                       let displayName = rawName.replace(species.name + "-", "").replace(species.name, "Base Form");
                       if (rawName === species.name) displayName = "Base Form";
@@ -256,14 +271,18 @@ function AdvancedPokedexModal({ id, onClose }) {
 
               <div>
                 <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-widest mt-6">Abilities</h3>
-                {data.abilities.map(a => <AbilityRow key={a.ability.name} name={a.ability.name} isHidden={a.is_hidden} />)}
+                {data.abilities && data.abilities.length > 0 ? (
+                  data.abilities.map(a => <AbilityRow key={a.ability.name + a.slot} name={a.ability.name} isHidden={a.is_hidden} />)
+                ) : (
+                  <p className="text-gray-500 text-sm italic bg-[#0D0D10] p-4 rounded-xl border border-white/5 text-center">No ability data recorded for this form.</p>
+                )}
               </div>
             </div>
           )}
 
           {activeTab === "stats" && (
             <div className="space-y-4 pt-2">
-              {data.stats.map(s => (
+              {data.stats?.map(s => (
                 <div key={s.stat.name} className="flex items-center text-sm">
                   <span className="w-20 text-gray-400 uppercase font-bold text-xs tracking-wider">{s.stat.name.replace("special-","sp.")}</span>
                   <span className="w-10 text-right font-mono text-white font-bold">{s.base_stat}</span>
@@ -274,7 +293,7 @@ function AdvancedPokedexModal({ id, onClose }) {
               ))}
               <div className="pt-4 mt-4 border-t border-white/5 flex justify-between items-center px-2">
                 <span className="text-gray-400 uppercase font-bold text-xs tracking-wider">Base Stat Total</span>
-                <span className="font-mono text-emerald-400 font-black text-lg">{data.stats.reduce((acc, s) => acc + s.base_stat, 0)}</span>
+                <span className="font-mono text-emerald-400 font-black text-lg">{data.stats?.reduce((acc, s) => acc + s.base_stat, 0)}</span>
               </div>
             </div>
           )}
@@ -283,10 +302,13 @@ function AdvancedPokedexModal({ id, onClose }) {
             <div>
               <p className="text-xs text-gray-500 uppercase font-bold mb-4 tracking-widest">Level-Up Moves</p>
               <div className="grid grid-cols-1">
-                {data.moves
-                  .filter(m => m.version_group_details[0].move_learn_method.name === "level-up")
-                  .sort((a,b) => a.version_group_details[0].level_learned_at - b.version_group_details[0].level_learned_at)
-                  .map(m => <MoveRow key={m.move.name} moveName={m.move.name} level={m.version_group_details[0].level_learned_at} />)}
+                {levelUpMoves.length > 0 ? (
+                  levelUpMoves.map((m, idx) => <MoveRow key={m.name + idx} moveName={m.name} level={m.level} />)
+                ) : (
+                  <p className="text-gray-500 text-sm italic bg-[#0D0D10] p-4 rounded-xl border border-white/5 text-center">
+                    Move data is shared with the Base Form.
+                  </p>
+                )}
               </div>
             </div>
           )}
