@@ -1,15 +1,15 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, Cpu, Gamepad2, FileUp, RefreshCw, Save, Download, FastForward, Play, Settings, X, HardDrive } from "lucide-react";
+import { Upload, Gamepad2, FileUp, Save, Download, FastForward, Play, Settings, X, HardDrive } from "lucide-react";
 import Emulator from "./Emulator";
 import { useEmu } from "../App";
 
-// Default Hotkeys (Uses standard KeyboardEvent.code)
+// Default Hotkeys
 const DEFAULT_HOTKEYS = {
   quickSave: "F1",
   quickLoad: "F2",
   fastForward: "Space",
-  autoFireA: "KeyP" // Example: P key for Auto-fire
+  autoFireA: "KeyP" 
 };
 
 export default function PlayPage() {
@@ -17,27 +17,39 @@ export default function PlayPage() {
   const { romFile, biosFile, setBiosFile, gameTitle, coreType, loadRom } = useEmu();
   const [emuKey, setEmuKey] = useState(0);
   
-  // HUD & Hotkey State
-  const [hotkeys, setHotkeys] = useState(() => JSON.parse(localStorage.getItem("emu_hotkeys")) || DEFAULT_HOTKEYS);
+  // Safely initialize hotkeys from localStorage
+  const [hotkeys, setHotkeys] = useState(() => {
+    try {
+      const stored = localStorage.getItem("emu_hotkeys");
+      return stored ? JSON.parse(stored) : DEFAULT_HOTKEYS;
+    } catch {
+      return DEFAULT_HOTKEYS;
+    }
+  });
+  
   const [showSettings, setShowSettings] = useState(false);
-  const [listeningFor, setListeningFor] = useState(null); // Which key is currently being remapped
+  const [listeningFor, setListeningFor] = useState(null); 
   const [isFastForwarding, setIsFastForwarding] = useState(false);
   const [autoFireA, setAutoFireA] = useState(false);
   
   const romRef = useRef(null);
-  const biosRef = useRef(null);
   const autoFireInterval = useRef(null);
 
-  // --- EMULATOR COMMANDS (FIXED with useMemo) ---
+  // --- EMULATOR COMMANDS (Wrapped safely in useMemo to fix Vercel dependency warning) ---
   const commands = useMemo(() => ({
-    quickSave: () => window.EJS_emulator?.gameManager?.quickSave(),
-    quickLoad: () => window.EJS_emulator?.gameManager?.quickLoad(),
+    quickSave: () => {
+      if (window.EJS_emulator?.gameManager) window.EJS_emulator.gameManager.quickSave();
+    },
+    quickLoad: () => {
+      if (window.EJS_emulator?.gameManager) window.EJS_emulator.gameManager.quickLoad();
+    },
     fastForward: () => {
-      window.EJS_emulator?.gameManager?.fastForward();
-      setIsFastForwarding(prev => !prev);
+      if (window.EJS_emulator?.gameManager) {
+        window.EJS_emulator.gameManager.fastForward();
+        setIsFastForwarding((prev) => !prev);
+      }
     },
     exportSav: () => {
-      // Reaches into EmulatorJS to trigger the actual .sav file download
       if (window.EJS_emulator?.gameManager) {
          window.EJS_emulator.gameManager.exportSavegames();
       } else {
@@ -51,25 +63,24 @@ export default function PlayPage() {
         setAutoFireA(false);
       } else {
         setAutoFireA(true);
-        // Fires the 'Z' key (EmulatorJS default A button) every 50ms
         autoFireInterval.current = setInterval(() => {
-          document.dispatchEvent(new KeyboardEvent('keydown', { key: "z", keyCode: 90, code: 'KeyZ', bubbles: true }));
-          setTimeout(() => document.dispatchEvent(new KeyboardEvent('keyup', { key: "z", keyCode: 90, code: 'KeyZ', bubbles: true })), 25);
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "z", keyCode: 90, code: "KeyZ", bubbles: true }));
+          setTimeout(() => {
+            document.dispatchEvent(new KeyboardEvent("keyup", { key: "z", keyCode: 90, code: "KeyZ", bubbles: true }));
+          }, 25);
         }, 50);
       }
     }
-  }), []); // Empty dependency array means this object is safely created only once!
+  }), []);
 
   // --- GLOBAL HOTKEY LISTENER ---
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
-      // Ignore if typing in an input or remapping
       if (e.target.tagName === "INPUT" || listeningFor) return; 
 
-      // Check if pressed key matches any of our hotkeys
       Object.entries(hotkeys).forEach(([action, code]) => {
         if (e.code === code) {
-          e.preventDefault(); // Stop page scrolling (like spacebar)
+          e.preventDefault();
           if (commands[action]) commands[action]();
         }
       });
@@ -108,9 +119,9 @@ export default function PlayPage() {
       if (container) container.innerHTML = "";
 
       loadRom(file);
-      setEmuKey(k => k + 1);
+      setEmuKey((k) => k + 1);
     }
-    e.target.value = "";
+    if (e.target) e.target.value = "";
   }, [loadRom]);
 
   if (!romFile) {
@@ -196,4 +207,27 @@ export default function PlayPage() {
               
               {Object.keys(DEFAULT_HOTKEYS).map((action) => (
                 <div key={action} className="flex items-center justify-between bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
-                  <span className="text-sm font-bold text-gray-300 capitalize">{action.replace(/([A-Z])/
+                  <span className="text-sm font-bold text-gray-300 capitalize">{action.replace(/([A-Z])/g, ' $1').trim()}</span>
+                  <button 
+                    onClick={() => setListeningFor(action)}
+                    className={`px-4 py-1.5 rounded font-mono text-xs font-bold transition-all ${listeningFor === action ? "bg-emerald-500 text-white animate-pulse" : "bg-gray-800 text-gray-400 hover:text-white"}`}
+                  >
+                    {listeningFor === action ? "Press any key..." : hotkeys[action]}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2 pt-4 border-t border-white/5">
+               <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.zip" className="hidden" onChange={handleRomChange} />
+               <button onClick={() => romRef.current?.click()} className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors">
+                 <FileUp className="w-5 h-5" /> Change ROM File
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
