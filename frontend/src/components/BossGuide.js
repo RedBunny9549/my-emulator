@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookOpen, X, Loader2, Crosshair, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen, X, Loader2, Crosshair, ChevronDown, ChevronUp, Package } from "lucide-react";
 import { BOSS_DATA } from "../data/bossData";
 
 const GAME_LABELS = {
@@ -13,6 +13,46 @@ function getTrainerSprite(leader) {
   let cleanName = leader.toLowerCase().replace(/\s+/g, "").replace("&", "and").replace(".", "");
   const map = { "blue": "blue", "championgary": "blue", "ltsurge": "ltsurge-gen3", "tateandliza": "tateandliza-gen3", "koga": "koga-gen2", "phoebe": "phoebe-gen3", "drake": "drake-gen3", "agatha": "agatha-gen3", "lorelei": "lorelei-gen3" };
   return `https://play.pokemonshowdown.com/sprites/trainers/${map[cleanName] || cleanName}.png`;
+}
+
+// --- Interactive Item Row for Bosses ---
+function ItemRow({ itemName }) {
+  const [data, setData] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const toggle = async () => {
+    if (!open && !data) {
+      setLoading(true);
+      try {
+        const formattedName = itemName.toLowerCase().replace(/\s/g, "-");
+        const res = await fetch(`https://pokeapi.co/api/v2/item/${formattedName}`);
+        const json = await res.json();
+        const effect = json.effect_entries?.find(e => e.language.name === "en")?.short_effect || json.flavor_text_entries?.find(e => e.language.name === "en")?.text || "No effect described.";
+        setData(effect);
+      } catch (err) { setData("Failed to load item data."); }
+      setLoading(false);
+    }
+    setOpen(!open);
+  };
+
+  return (
+    <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl mb-4 overflow-hidden transition-all">
+      <button onClick={toggle} className="w-full px-4 py-3 flex justify-between items-center hover:bg-white/5">
+        <div className="flex items-center gap-3">
+          <Package className="w-4 h-4 text-yellow-500" />
+          <span className="text-gray-400 text-xs font-bold uppercase tracking-widest">Held Item</span>
+          <span className="text-yellow-400 font-bold capitalize text-sm">{itemName.replace("-"," ")}</span>
+        </div>
+        {loading ? <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" /> : open ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+      </button>
+      {open && data && (
+        <div className="px-4 pb-4 text-sm text-gray-400 border-t border-yellow-500/20 pt-3 bg-black/20 leading-relaxed">
+          {data}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // --- Interactive Ability Row for Bosses ---
@@ -125,9 +165,19 @@ function BossPokemonModal({ pokemon, onClose }) {
 
         {!data ? <Loader2 className="animate-spin text-emerald-500 mx-auto my-12" /> : (
           <div>
-            <img src={data.sprites.other["official-artwork"]?.front_default || data.sprites.front_default} className="w-32 h-32 mx-auto drop-shadow-xl" alt={pokemon.name} />
+            <div className="relative">
+               {/* Display Held Item Sprite next to the Pokemon if it has one */}
+               {pokemon.item && (
+                 <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${pokemon.item}.png`} 
+                      className="absolute top-0 right-10 w-12 h-12 pixelated drop-shadow-md z-20" 
+                      alt={pokemon.item} title={pokemon.item.replace("-", " ")} />
+               )}
+               <img src={data.sprites.other["official-artwork"]?.front_default || data.sprites.front_default} className="w-32 h-32 mx-auto drop-shadow-xl relative z-10" alt={pokemon.name} />
+            </div>
             
             <div className="mt-4">
+              {pokemon.item && <ItemRow itemName={pokemon.item} />}
+              
               {pokemon.ability ? (
                 <AbilityRow abilityName={pokemon.ability} />
               ) : (
@@ -190,29 +240,36 @@ export default function BossGuide() {
         ))}
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {bosses.map(boss => (
-          <div key={boss.leader} className="bg-[#16161A] border border-white/5 rounded-3xl p-6 flex flex-col sm:flex-row gap-6 shadow-xl hover:border-white/10 transition-colors">
-            <div className="flex flex-col items-center gap-3 flex-shrink-0">
-              <div className="w-24 h-24 bg-gradient-to-t from-black/40 to-transparent rounded-2xl p-2 border border-white/5 shadow-inner">
-                <img src={getTrainerSprite(boss.leader)} className="w-full h-full object-contain" alt={boss.leader} />
+      {bosses.length === 0 ? (
+        <div className="text-center py-20 text-gray-500 font-bold">No boss data available for this section.</div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {bosses.map(boss => (
+            <div key={boss.leader} className="bg-[#16161A] border border-white/5 rounded-3xl p-6 flex flex-col sm:flex-row gap-6 shadow-xl hover:border-white/10 transition-colors">
+              <div className="flex flex-col items-center gap-3 flex-shrink-0">
+                <div className="w-24 h-24 bg-gradient-to-t from-black/40 to-transparent rounded-2xl p-2 border border-white/5 shadow-inner">
+                  <img src={getTrainerSprite(boss.leader)} className="w-full h-full object-contain" alt={boss.leader} />
+                </div>
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{boss.badge || boss.title}</span>
               </div>
-              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{boss.badge || boss.title}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-4">{boss.leader}</h2>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {boss.team.map((p, i) => (
-                  <button key={i} onClick={() => setSelectedPokemon(p)} className="flex flex-col items-center bg-[#0D0D10] hover:bg-emerald-500/10 transition-all cursor-pointer rounded-xl p-3 border border-white/5 shadow-sm">
-                    <img src={`https://img.pokemondb.net/sprites/emerald/normal/${p.name.toLowerCase()}.png`} className="w-10 h-10 pixelated drop-shadow-md mb-2" title={p.name} onError={(e) => e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'} />
-                    <span className="text-[10px] text-gray-400 font-black font-mono">LV.{p.level}</span>
-                  </button>
-                ))}
+              <div className="flex-1 min-w-0">
+                <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-4">{boss.leader}</h2>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  {boss.team.map((p, i) => (
+                    <button key={i} onClick={() => setSelectedPokemon(p)} className="flex flex-col items-center bg-[#0D0D10] hover:bg-emerald-500/10 transition-all cursor-pointer rounded-xl p-3 border border-white/5 shadow-sm relative">
+                      {p.item && (
+                        <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${p.item}.png`} className="absolute -top-2 -right-2 w-6 h-6 pixelated z-10" alt="Held Item" title={p.item} />
+                      )}
+                      <img src={`https://img.pokemondb.net/sprites/emerald/normal/${p.name.toLowerCase()}.png`} className="w-10 h-10 pixelated drop-shadow-md mb-2" title={p.name} onError={(e) => e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'} />
+                      <span className="text-[10px] text-gray-400 font-black font-mono">LV.{p.level}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       {selectedPokemon && <BossPokemonModal pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />}
     </div>
   );
