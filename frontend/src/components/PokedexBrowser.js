@@ -1,37 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Loader2, X, Info, ChevronDown, ChevronUp } from "lucide-react";
-
-// Massive Nuzlocke University Consensus Tier List
-const NUZLOCKE_TIERS = {
-  // S-Tier: Run carriers
-  gyarados:"S", snorlax:"S", blissey:"S", swampert:"S", zapdos:"S", suicune:"S",
-  garchomp:"S", salamence:"S", metagross:"S", tyranitar:"S", mewtwo:"S", rayquaza:"S",
-  kyogre:"S", groudon:"S", lugia:"S", "ho-oh":"S", slaking:"S", alakazam:"S", starmie:"S",
-  // A-Tier: Incredible encounters
-  crobat:"A", magneton:"A", heracross:"A", lapras:"A", aerodactyl:"A", skarmory:"A",
-  swellow:"A", tentacruel:"A", lanturn:"A", umbreon:"A", espeon:"A", vaporeon:"A",
-  jolteon:"A", arcanine:"A", machamp:"A", gengar:"A", slowbro:"A", exeggutor:"A",
-  tauros:"A", miltank:"A", venusaur:"A", charizard:"A", blastoise:"A",
-  // B-Tier: Solid and reliable
-  nidoking:"B", nidoqueen:"B", clefable:"B", victreebel:"B", vileplume:"B", 
-  ninetales:"B", poliwrath:"B", kadabra:"B", haunter:"B", hypno:"B", electrode:"B",
-  weezing:"B", rhydon:"B", kangaskhan:"B", scyther:"B", pinsir:"B", jynx:"B",
-  meganium:"B", typhlosion:"B", feraligatr:"B", ampharos:"B", quagsire:"B",
-  forretress:"B", steelix:"B", houndoom:"B", donphan:"B", sceptile:"B", blaziken:"B",
-  gardevoir:"B", breloom:"B", hariyama:"B", aggron:"B", manectric:"B", flygon:"B",
-  altaria:"B", walrein:"B",
-  // C-Tier: Usable but flawed
-  butterfree:"C", pidgeot:"C", raticate:"C", fearow:"C", arbok:"C", raichu:"C",
-  sandslash:"C", golbat:"C", parasect:"C", dugtrio:"C", persian:"C", golduck:"C",
-  primeape:"C", dodrio:"C", dewgong:"C", muk:"C", cloyster:"C", kingler:"C",
-  marowak:"C", hitmonlee:"C", hitmonchan:"C", tangela:"C", seaking:"C", mr_mime:"C",
-  magmar:"C", electabuzz:"C", noctowl:"C", ariados:"C", xatu:"C", sudowoodo:"C",
-  jumpluff:"C", aipom:"C", girafarig:"C", ursaring:"C", mantine:"C", skitty:"C",
-  // D/F-Tier: Avoid if possible
-  beedrill:"D", raticate:"D", furret:"D", ledian:"D", unown:"F", wobbuffet:"D",
-  delibird:"F", smeargle:"F", luvdisc:"F", spinda:"F", castform:"D", beautifly:"D",
-  dustox:"D", corsola:"D", sunflora:"F", dunsparce:"D", farfetchd:"F", ditto:"F",
-};
+import { Search, Loader2, X, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 
 const GEN_RANGES = {
   1: { min:1, max:151, name:"Gen I" },
@@ -149,6 +117,37 @@ function MoveRow({ moveName, level }) {
   );
 }
 
+// --- Evolutions Component ---
+function EvolutionChain({ url }) {
+  const [chain, setChain] = useState([]);
+  
+  useEffect(() => {
+    if (!url) return;
+    fetch(url).then(r=>r.json()).then(d => {
+      const evos = [];
+      let curr = d.chain;
+      while (curr) {
+        evos.push(curr.species.name);
+        curr = curr.evolves_to[0]; // Simplistic linear mapping for general use
+      }
+      setChain(evos);
+    }).catch(()=>{});
+  }, [url]);
+
+  if (chain.length < 2) return <p className="text-gray-500 text-xs italic">Does not evolve.</p>;
+
+  return (
+    <div className="flex items-center gap-3 flex-wrap">
+      {chain.map((name, i) => (
+        <div key={name} className="flex items-center gap-3">
+          <div className="bg-[#0D0D10] border border-white/5 px-3 py-2 rounded-lg text-sm font-bold text-white capitalize">{name.replace("-"," ")}</div>
+          {i < chain.length - 1 && <ArrowRight className="w-4 h-4 text-emerald-500" />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function AdvancedPokedexModal({ id, onClose }) {
   const [data, setData] = useState(null);
   const [species, setSpecies] = useState(null);
@@ -171,20 +170,11 @@ function AdvancedPokedexModal({ id, onClose }) {
   );
 
   const flavorText = species.flavor_text_entries.find(f => f.language.name === "en")?.flavor_text.replace(/\f/g, " ");
-  const tier = NUZLOCKE_TIERS[data.name] || "Unranked";
-
-  // Tier coloring
-  const tierColor = tier === "S" ? "text-pink-400 bg-pink-500/10 border-pink-500/30" : 
-                    tier === "A" ? "text-orange-400 bg-orange-500/10 border-orange-500/30" : 
-                    tier === "B" ? "text-yellow-400 bg-yellow-500/10 border-yellow-500/30" : 
-                    tier === "C" ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" : 
-                    "text-gray-400 bg-gray-500/10 border-gray-500/30";
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[#16161A] border border-white/10 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e=>e.stopPropagation()}>
+      <div className="bg-[#16161A] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e=>e.stopPropagation()}>
         
-        {/* Header */}
         <div className="p-6 pb-0">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -195,11 +185,9 @@ function AdvancedPokedexModal({ id, onClose }) {
           </div>
           <div className="flex gap-2 mb-4">
             {data.types.map(t => <span key={t.type.name} className="px-3 py-1 bg-gray-800 text-white text-xs font-bold uppercase rounded border border-gray-600">{t.type.name}</span>)}
-            <span className={`px-3 py-1 border text-xs font-bold uppercase rounded ml-auto ${tierColor}`}>Nuzlocke Tier: {tier}</span>
           </div>
         </div>
 
-        {/* Content Tabs */}
         <div className="flex border-b border-white/10 px-6">
           {["info", "stats", "moves"].map(t => (
             <button 
@@ -212,20 +200,22 @@ function AdvancedPokedexModal({ id, onClose }) {
           ))}
         </div>
 
-        {/* Scrollable Area */}
         <div className="p-6 overflow-y-auto">
           {activeTab === "info" && (
             <div className="space-y-6">
               <img src={data.sprites.other["official-artwork"].front_default || data.sprites.front_default} className="w-40 h-40 mx-auto drop-shadow-xl pixelated" alt={data.name} />
+              
               <div className="bg-[#0D0D10] p-4 rounded-xl border border-white/5">
                 <p className="text-gray-300 text-sm leading-relaxed italic">"{flavorText}"</p>
               </div>
-              
+
               <div>
-                <div className="flex items-center gap-2 mb-3 mt-6">
-                  <Info className="w-4 h-4 text-gray-500" />
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Abilities</h3>
-                </div>
+                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3">Evolution Chain</h3>
+                <EvolutionChain url={species.evolution_chain?.url} />
+              </div>
+
+              <div>
+                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3">Abilities</h3>
                 {data.abilities.map(a => <AbilityRow key={a.ability.name} name={a.ability.name} isHidden={a.is_hidden} />)}
               </div>
             </div>
@@ -242,10 +232,6 @@ function AdvancedPokedexModal({ id, onClose }) {
                   </div>
                 </div>
               ))}
-              <div className="pt-4 mt-4 border-t border-white/5 flex justify-between items-center px-2">
-                <span className="text-gray-400 uppercase font-bold text-xs tracking-wider">Base Stat Total</span>
-                <span className="font-mono text-emerald-400 font-black text-lg">{data.stats.reduce((acc, s) => acc + s.base_stat, 0)}</span>
-              </div>
             </div>
           )}
 
@@ -279,11 +265,14 @@ export default function PokedexBrowser() {
     fetch(`https://pokeapi.co/api/v2/pokemon?limit=${max - min + 1}&offset=${min - 1}`)
       .then(r => r.json())
       .then(data => {
-        const entries = data.results.map((r, i) => ({
-          id: min + i,
-          name: r.name,
-          sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${min + i}.png`
-        }));
+        const entries = data.results.map((r, i) => {
+          const id = min + i;
+          // IMPORTANT FIX: Use official-artwork to guarantee Gen 9 Pokemon load
+          const sprite = id >= 906 
+            ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
+            : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+          return { id, name: r.name, sprite };
+        });
         setAllEntries(entries);
         setLoading(false);
       });
@@ -296,7 +285,7 @@ export default function PokedexBrowser() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-emerald-500">Pokédex</h1>
-          <p className="text-gray-500 text-sm">Nuzlocke Reference Database</p>
+          <p className="text-gray-500 text-sm">Official Information Base</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {Object.entries(GEN_RANGES).map(([key, info]) => (
@@ -327,18 +316,13 @@ export default function PokedexBrowser() {
 
       {loading ? <Loader2 className="animate-spin mx-auto text-emerald-500 mt-20 w-8 h-8" /> : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-          {filtered.map(p => {
-            const tier = NUZLOCKE_TIERS[p.name] || "?";
-            const tierColor = tier === "S" ? "text-pink-400" : tier === "A" ? "text-orange-400" : tier === "B" ? "text-yellow-400" : tier === "C" ? "text-emerald-400" : "text-gray-500";
-            return (
-              <button key={p.id} onClick={() => setSelected(p.id)} className="bg-[#16161A] border border-white/5 p-4 rounded-2xl flex flex-col items-center hover:border-emerald-500/50 transition-all group cursor-pointer shadow-lg relative">
-                <span className={`absolute top-2 right-2 text-[10px] font-black ${tierColor}`}>{tier}</span>
-                <img src={p.sprite} className="w-16 h-16 group-hover:scale-110 transition-transform pixelated" alt={p.name} />
-                <span className="text-[10px] font-mono text-gray-600 mt-2">#{String(p.id).padStart(3, '0')}</span>
-                <span className="text-xs font-bold capitalize text-gray-300 mt-1">{p.name}</span>
-              </button>
-            );
-          })}
+          {filtered.map(p => (
+            <button key={p.id} onClick={() => setSelected(p.id)} className="bg-[#16161A] border border-white/5 p-4 rounded-2xl flex flex-col items-center hover:border-emerald-500/50 transition-all group cursor-pointer shadow-lg">
+              <img src={p.sprite} className="w-16 h-16 group-hover:scale-110 transition-transform pixelated" alt={p.name} />
+              <span className="text-[10px] font-mono text-gray-600 mt-2">#{String(p.id).padStart(3, '0')}</span>
+              <span className="text-xs font-bold capitalize text-gray-300 mt-1 truncate w-full text-center">{p.name.replace("-"," ")}</span>
+            </button>
+          ))}
         </div>
       )}
       {selected && <AdvancedPokedexModal id={selected} onClose={() => setSelected(null)} />}
