@@ -2,8 +2,6 @@ import { useState, createContext, useContext } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "@/App.css";
 import PlayPage from "./components/PlayPage";
-import NuzlockeList from "./components/NuzlockeList";
-import NuzlockeRunPage from "./components/NuzlockeRunPage";
 import LibraryPage from "./components/LibraryPage";
 import BossGuide from "./components/BossGuide";
 import RouteBrowser from "./components/RouteBrowser";
@@ -53,8 +51,6 @@ function App() {
               <Route path="/"            element={<Navigate to="/play" replace />} />
               <Route path="/play"        element={<PlayPage />} />
               <Route path="/library"     element={<LibraryPage />} />
-              <Route path="/nuzlocke"    element={<NuzlockeList />} />
-              <Route path="/nuzlocke/:runId" element={<NuzlockeRunPage />} />
               <Route path="/bosses"      element={<BossGuide />} />
               <Route path="/routes"      element={<RouteBrowser />} />
               <Route path="/pokedex"     element={<PokedexBrowser />} />
