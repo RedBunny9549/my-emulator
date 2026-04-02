@@ -3,12 +3,11 @@ import { TYPE_CHART, TYPE_COLOR } from "../data/typeData";
 import { LayoutGrid, X } from "lucide-react";
 
 export default function TypeCoverageMap() {
-  const [type1, setType1] = useState("normal");
-  const [type2, setType2] = useState(null); // Optional secondary type
+  const [type1, setType1] = useState(null); // Now starts as null or can be toggled to null
+  const [type2, setType2] = useState(null); 
   
   const types = Object.keys(TYPE_CHART);
 
-  // Math to calculate multiplier of an attacking move against our defender
   const getMultiplier = (defender, attacker) => {
     if (!defender) return 1;
     if (TYPE_CHART[defender].immune_to.includes(attacker)) return 0;
@@ -19,7 +18,8 @@ export default function TypeCoverageMap() {
 
   const matchups = useMemo(() => {
     const results = { "4x": [], "2x": [], "1x": [], "0.5x": [], "0.25x": [], "0x": [] };
-    
+    if (!type1 && !type2) return results; // Return empty if nothing selected
+
     types.forEach(attacker => {
       let multiplier = getMultiplier(type1, attacker);
       if (type2 && type1 !== type2) {
@@ -37,12 +37,18 @@ export default function TypeCoverageMap() {
   }, [type1, type2, types]);
 
   const toggleType = (t) => {
-    if (type1 === t) return; // Can't deselect primary easily, just pick another
-    if (type2 === t) setType2(null);
-    else if (!type2) setType2(t);
-    else {
-      setType1(type2); // Shift secondary to primary
-      setType2(t);     // Make new type secondary
+    if (type1 === t) {
+      if (type2) { setType1(type2); setType2(null); }
+      else { setType1(null); }
+    } else if (type2 === t) {
+      setType2(null);
+    } else if (!type1) {
+      setType1(t);
+    } else if (!type2) {
+      setType2(t);
+    } else {
+      setType1(type2);
+      setType2(t);
     }
   };
 
@@ -74,25 +80,25 @@ export default function TypeCoverageMap() {
         </div>
       </div>
 
-      <div className="bg-[#16161A] border border-white/5 p-4 rounded-2xl mb-8 flex items-center gap-4">
+      <div className="bg-[#16161A] border border-white/5 p-4 rounded-2xl mb-8 flex flex-wrap items-center gap-4">
         <span className="text-gray-500 font-bold text-sm uppercase tracking-widest">Defender:</span>
         <div className="flex gap-2">
-          <span style={{ backgroundColor: TYPE_COLOR[type1], borderColor: TYPE_COLOR[type1] }} className="px-4 py-2 text-white font-black uppercase rounded-lg shadow-lg">
-            {type1}
-          </span>
-          {type2 ? (
+          {type1 ? (
+            <button onClick={() => toggleType(type1)} style={{ backgroundColor: TYPE_COLOR[type1], borderColor: TYPE_COLOR[type1] }} className="flex items-center gap-1 px-4 py-2 text-white font-black uppercase rounded-lg shadow-lg hover:opacity-80">
+              {type1} <X className="w-4 h-4 ml-1" />
+            </button>
+          ) : (
+            <span className="px-4 py-2 border border-dashed border-gray-600 text-gray-600 font-black uppercase rounded-lg">Select a Type</span>
+          )}
+
+          {type2 && (
             <button onClick={() => setType2(null)} style={{ backgroundColor: TYPE_COLOR[type2], borderColor: TYPE_COLOR[type2] }} className="flex items-center gap-1 px-4 py-2 text-white font-black uppercase rounded-lg shadow-lg hover:opacity-80">
               {type2} <X className="w-4 h-4 ml-1" />
             </button>
-          ) : (
-            <span className="px-4 py-2 border border-dashed border-gray-600 text-gray-600 font-black uppercase rounded-lg">
-              + 2nd Type
-            </span>
           )}
         </div>
       </div>
 
-      {/* Selectors */}
       <div className="flex gap-3 flex-wrap mb-10">
         {types.map(t => {
           const isActive = type1 === t || type2 === t;
@@ -113,18 +119,21 @@ export default function TypeCoverageMap() {
         })}
       </div>
 
-      {/* Dynamic Grid Results */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <MatchupSection title="Fatal Weakness (4x)" list={matchups["4x"]} colorClass="text-red-500" borderClass="border-red-500/30" />
-          <MatchupSection title="Weak To (2x)" list={matchups["2x"]} colorClass="text-orange-400" borderClass="border-orange-500/20" />
+      {(!type1 && !type2) ? (
+        <div className="text-center py-20 text-gray-600 font-bold">Select a type above to view matchups.</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <MatchupSection title="Fatal Weakness (4x)" list={matchups["4x"]} colorClass="text-red-500" borderClass="border-red-500/30" />
+            <MatchupSection title="Weak To (2x)" list={matchups["2x"]} colorClass="text-orange-400" borderClass="border-orange-500/20" />
+          </div>
+          <div>
+            <MatchupSection title="Immune To (0x)" list={matchups["0x"]} colorClass="text-gray-400" borderClass="border-gray-500/30" />
+            <MatchupSection title="Double Resists (0.25x)" list={matchups["0.25x"]} colorClass="text-emerald-500" borderClass="border-emerald-500/30" />
+            <MatchupSection title="Resists (0.5x)" list={matchups["0.5x"]} colorClass="text-emerald-300" borderClass="border-emerald-500/10" />
+          </div>
         </div>
-        <div>
-          <MatchupSection title="Immune To (0x)" list={matchups["0x"]} colorClass="text-gray-400" borderClass="border-gray-500/30" />
-          <MatchupSection title="Double Resists (0.25x)" list={matchups["0.25x"]} colorClass="text-emerald-500" borderClass="border-emerald-500/30" />
-          <MatchupSection title="Resists (0.5x)" list={matchups["0.5x"]} colorClass="text-emerald-300" borderClass="border-emerald-500/10" />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
