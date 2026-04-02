@@ -17,14 +17,21 @@ function App() {
   const [romFile, setRomFile] = useState(null);
   const [biosFile, setBiosFile] = useState(null);
   const [gameTitle, setGameTitle] = useState("");
-  const [coreType, setCoreType] = useState("gba");
+  const [coreType, setCoreType] = useState("mgba");
 
   const loadRom = (file) => {
     const ext = file.name.toLowerCase().split(".").pop();
-    const core = ext === "gba" ? "gba" : ext === "gbc" ? "gbc" : "gb";
+    
+    // FIXED: EmulatorJS requires 'gambatte' for GB/GBC and 'mgba' for GBA
+    let core = "mgba";
+    if (ext === "gbc" || ext === "gb") {
+      core = "gambatte";
+    }
+
     setRomFile(file);
     setCoreType(core);
     setGameTitle(file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " "));
+
     try {
       const stored = JSON.parse(localStorage.getItem("recent_roms") || "[]");
       const existing = stored.find((r) => r.name === file.name);
@@ -42,7 +49,7 @@ function App() {
 
   return (
     <EmuContext.Provider value={{ romFile, biosFile, setBiosFile, gameTitle, coreType, loadRom }}>
-      <div className="App">
+      <div className="App bg-mudkip-navy min-h-screen text-white">
         <BrowserRouter>
           <Routes>
             <Route path="/"            element={<Navigate to="/play" replace />} />
