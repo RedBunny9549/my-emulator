@@ -9,22 +9,43 @@ export default function DatabaseBrowser() {
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     setLoading(true);
     setSearch("");
     setSelected(null);
-    fetch(`https://pokeapi.co/api/v2/${tab}?limit=1000`)
-      .then(r => r.json())
+    
+    // FIX: PokeAPI strictly requires singular endpoints ("move" and "ability")
+    const endpoint = tab === "moves" ? "move" : "ability";
+
+    fetch(`https://pokeapi.co/api/v2/${endpoint}?limit=1000`)
+      .then(r => {
+        if (!r.ok) throw new Error("API request failed");
+        return r.json();
+      })
       .then(data => {
-        setList(data.results);
-        setLoading(false);
+        if (isMounted) {
+          setList(data.results);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to load list:", err);
+        if (isMounted) setLoading(false);
       });
+
+    return () => { isMounted = false; };
   }, [tab]);
 
   const loadDetails = async (url) => {
     setSelected(null);
-    const res = await fetch(url);
-    const data = await res.json();
-    setSelected(data);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("API request failed");
+      const data = await res.json();
+      setSelected(data);
+    } catch (err) {
+      console.error("Failed to load details:", err);
+    }
   };
 
   const filtered = list.filter(i => i.name.includes(search.toLowerCase().replace(/\s/g, "-")));
@@ -72,13 +93,13 @@ export default function DatabaseBrowser() {
             <div className="bg-[#16161A] border border-white/5 rounded-3xl p-6 shadow-xl sticky top-20">
               <h2 className="text-3xl font-black text-white capitalize mb-2">{selected.name.replace(/-/g, " ")}</h2>
               <span className="inline-block px-3 py-1 bg-white/5 text-gray-400 text-xs font-bold uppercase rounded border border-white/10 mb-6">
-                Introduced in {selected.generation.name.replace("generation-", "Gen ")}
+                Introduced in {selected.generation?.name.replace("generation-", "Gen ") || "Unknown Gen"}
               </span>
 
-              {tab === "moves" && (
+              {tab === "moves" && selected.type && (
                 <div className="flex flex-wrap gap-3 mb-6">
                   <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">Type</p><p className="text-sm font-bold text-white uppercase">{selected.type.name}</p></div>
-                  <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">Class</p><p className="text-sm font-bold text-white capitalize">{selected.damage_class.name}</p></div>
+                  <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">Class</p><p className="text-sm font-bold text-white capitalize">{selected.damage_class?.name || "Status"}</p></div>
                   <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">Power</p><p className="text-sm font-bold text-white font-mono">{selected.power || "-"}</p></div>
                   <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">Acc</p><p className="text-sm font-bold text-white font-mono">{selected.accuracy || "-"}</p></div>
                   <div className="bg-[#0D0D10] px-4 py-2 rounded-xl border border-white/5"><p className="text-[10px] text-gray-500 uppercase font-bold">PP</p><p className="text-sm font-bold text-white font-mono">{selected.pp || "-"}</p></div>
@@ -92,7 +113,7 @@ export default function DatabaseBrowser() {
             </div>
           ) : (
             <div className="h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-3xl p-10 text-gray-500 text-center">
-              Select a move or ability from the list to view its details.
+              Select a {tab === "moves" ? "move" : "ability"} from the list to view its details.
             </div>
           )}
         </div>
