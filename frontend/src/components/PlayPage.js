@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, Gamepad2, FileUp, Save, Download, FastForward, Play, Settings, X, HardDrive } from "lucide-react";
+import { Upload, Gamepad2, FileUp, Save, Download, FastForward, Play, Settings, X, Menu } from "lucide-react";
 import Emulator from "./Emulator";
 import { useEmu } from "../App";
 
@@ -35,43 +35,45 @@ export default function PlayPage() {
   const romRef = useRef(null);
   const autoFireInterval = useRef(null);
 
-  // --- EMULATOR COMMANDS (Wrapped safely in useMemo to fix Vercel dependency warning) ---
-  const commands = useMemo(() => ({
-    quickSave: () => {
-      if (window.EJS_emulator?.gameManager) window.EJS_emulator.gameManager.quickSave();
-    },
-    quickLoad: () => {
-      if (window.EJS_emulator?.gameManager) window.EJS_emulator.gameManager.quickLoad();
-    },
-    fastForward: () => {
-      if (window.EJS_emulator?.gameManager) {
-        window.EJS_emulator.gameManager.fastForward();
+  // --- MACRO COMMANDS (Simulates Keyboard presses to bypass API restrictions) ---
+  const commands = useMemo(() => {
+    const triggerKey = (keyCode, code, key) => {
+      const eventDown = new KeyboardEvent("keydown", { key, code, keyCode, which: keyCode, bubbles: true, composed: true });
+      const eventUp = new KeyboardEvent("keyup", { key, code, keyCode, which: keyCode, bubbles: true, composed: true });
+      
+      // Dispatch globally and directly to the canvas to ensure the emulator catches it
+      document.dispatchEvent(eventDown);
+      document.querySelector("canvas")?.dispatchEvent(eventDown);
+      
+      setTimeout(() => {
+        document.dispatchEvent(eventUp);
+        document.querySelector("canvas")?.dispatchEvent(eventUp);
+      }, 50);
+    };
+
+    return {
+      quickSave: () => triggerKey(113, "F2", "F2"), // Simulates F2
+      quickLoad: () => triggerKey(115, "F4", "F4"), // Simulates F4
+      openMenu: () => triggerKey(112, "F1", "F1"),  // Simulates F1 (Opens native Emu Menu for Save Exports)
+      fastForward: () => {
+        triggerKey(32, "Space", " "); // Simulates Spacebar
         setIsFastForwarding((prev) => !prev);
+      },
+      autoFireA: () => {
+        if (autoFireInterval.current) {
+          clearInterval(autoFireInterval.current);
+          autoFireInterval.current = null;
+          setAutoFireA(false);
+        } else {
+          setAutoFireA(true);
+          // Rapidly fires the "X" key (Standard 'A' button)
+          autoFireInterval.current = setInterval(() => {
+            triggerKey(88, "KeyX", "x"); 
+          }, 50);
+        }
       }
-    },
-    exportSav: () => {
-      if (window.EJS_emulator?.gameManager) {
-         window.EJS_emulator.gameManager.exportSavegames();
-      } else {
-         alert("Game must be running to export a save.");
-      }
-    },
-    autoFireA: () => {
-      if (autoFireInterval.current) {
-        clearInterval(autoFireInterval.current);
-        autoFireInterval.current = null;
-        setAutoFireA(false);
-      } else {
-        setAutoFireA(true);
-        autoFireInterval.current = setInterval(() => {
-          document.dispatchEvent(new KeyboardEvent("keydown", { key: "z", keyCode: 90, code: "KeyZ", bubbles: true }));
-          setTimeout(() => {
-            document.dispatchEvent(new KeyboardEvent("keyup", { key: "z", keyCode: 90, code: "KeyZ", bubbles: true }));
-          }, 25);
-        }, 50);
-      }
-    }
-  }), []);
+    };
+  }, []);
 
   // --- GLOBAL HOTKEY LISTENER ---
   useEffect(() => {
@@ -160,7 +162,7 @@ export default function PlayPage() {
         <Emulator key={emuKey} romFile={romFile} biosFile={biosFile} />
       </div>
 
-      {/* Custom mGBA-Style Command Bar */}
+      {/* Custom Macro Command Bar */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
         <button onClick={commands.quickSave} className="flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-3 rounded-xl transition-colors group">
           <Save className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
@@ -186,10 +188,10 @@ export default function PlayPage() {
           <span className="text-[9px] font-mono text-gray-600">[{hotkeys.autoFireA}]</span>
         </button>
 
-        <button onClick={commands.exportSav} className="flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-3 rounded-xl transition-colors group col-span-2 md:col-span-1">
-          <HardDrive className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Export .SAV</span>
-          <span className="text-[9px] font-mono text-gray-600">Disk Save</span>
+        <button onClick={commands.openMenu} className="flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-3 rounded-xl transition-colors group col-span-2 md:col-span-1">
+          <Menu className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" />
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Emu Menu</span>
+          <span className="text-[9px] font-mono text-gray-600">Files / Export</span>
         </button>
       </div>
 
@@ -198,12 +200,13 @@ export default function PlayPage() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-[#16161A] border border-white/10 w-full max-w-md rounded-3xl p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-black text-white uppercase tracking-widest">Emulator Settings</h2>
+              <h2 className="text-xl font-black text-white uppercase tracking-widest">Macro Settings</h2>
               <button onClick={() => { setShowSettings(false); setListeningFor(null); }} className="p-2 bg-white/5 rounded-full hover:bg-white/10"><X className="w-5 h-5 text-gray-400" /></button>
             </div>
 
             <div className="space-y-4 mb-6">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2">Custom Hotkeys</h3>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2">HUD Hotkeys</h3>
+              <p className="text-[10px] text-gray-500 italic mb-2">Note: To change the actual in-game controls (A, B, D-Pad), use the Emu Menu below the screen.</p>
               
               {Object.keys(DEFAULT_HOTKEYS).map((action) => (
                 <div key={action} className="flex items-center justify-between bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
