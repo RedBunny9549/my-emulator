@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { TYPE_COLOR } from "../data/typeData";
 import { LayoutGrid, X } from "lucide-react";
 
@@ -61,7 +61,8 @@ export default function TypeCoverageMap() {
   const [type2, setType2] = useState(null); 
   
   const chart = getChartForGen(generation);
-  const types = Object.keys(chart);
+  // Memoize types array so it doesn't cause unnecessary re-renders
+  const types = useMemo(() => Object.keys(chart), [chart]);
 
   // Deselect types if you change generation to one where that type doesn't exist
   useEffect(() => {
@@ -74,15 +75,16 @@ export default function TypeCoverageMap() {
     }
   }, [generation, type1, type2]);
 
-  const getMultiplier = (defender, attacker) => {
-    if (!defender) return 1;
-    if (chart[defender].immune_to.includes(attacker)) return 0;
-    if (chart[defender].weak_to.includes(attacker)) return 2;
-    if (chart[defender].resists.includes(attacker)) return 0.5;
-    return 1;
-  };
-
   const matchups = useMemo(() => {
+    // FIX: Moved getMultiplier inside useMemo to satisfy ESLint dependencies
+    const getMultiplier = (defender, attacker) => {
+      if (!defender) return 1;
+      if (chart[defender].immune_to.includes(attacker)) return 0;
+      if (chart[defender].weak_to.includes(attacker)) return 2;
+      if (chart[defender].resists.includes(attacker)) return 0.5;
+      return 1;
+    };
+
     const results = { "4x": [], "2x": [], "1x": [], "0.5x": [], "0.25x": [], "0x": [] };
     if (!type1 && !type2) return results; 
 
@@ -141,7 +143,6 @@ export default function TypeCoverageMap() {
         </div>
       </div>
 
-      {/* Selectors and Results remain mostly the same ... */}
       <div className="bg-[#16161A] border border-white/5 p-4 rounded-2xl mb-8 flex flex-wrap items-center gap-4">
         <span className="text-gray-500 font-bold text-sm uppercase tracking-widest">Defender:</span>
         <div className="flex gap-2">
