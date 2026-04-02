@@ -8,10 +8,9 @@ const DEFAULT_HOTKEYS = {
   quickSave: "F1",
   quickLoad: "F2",
   fastForward: "Space",
-  autoFireToggle: "KeyP" // The key you press to turn Auto-Fire ON/OFF
+  autoFireToggle: "KeyP" 
 };
 
-// Updated Default Key that actually gets spammed (Now 'E' to match your 'A' button!)
 const DEFAULT_AUTOFIRE_TARGET = { key: "e", code: "KeyE", keyCode: 69 };
 
 export default function PlayPage() {
@@ -45,49 +44,29 @@ export default function PlayPage() {
   const romRef = useRef(null);
   const autoFireInterval = useRef(null);
 
-  // --- FORCE EMULATOR DEFAULT CONTROLS (WASD, Q/E, Z/X, Shift/Enter) ---
-  useEffect(() => {
-    window.EJS_defaultControls = {
-      0: { // Player 1
-        up: "KeyW",
-        down: "KeyS",
-        left: "KeyA",
-        right: "KeyD",
-        a: "KeyE",
-        b: "KeyQ",
-        l: "KeyZ",
-        r: "KeyX",
-        select: "ShiftLeft",
-        start: "Enter"
-      }
-    };
-  }, []);
-
   // --- AGGRESSIVE MACRO COMMANDS ---
   const commands = useMemo(() => {
-    const triggerKey = (keyCode, code, key) => {
-      const payload = { key, code, keyCode, which: keyCode, charCode: keyCode, bubbles: true, composed: true };
+    // Highly specific WASM-compatible ghost key press
+    const triggerKey = (code) => {
+      const payload = { code: code, key: code, bubbles: true, composed: true, cancelable: true };
       const eventDown = new KeyboardEvent("keydown", payload);
       const eventUp = new KeyboardEvent("keyup", payload);
       
-      const canvas = document.querySelector("canvas");
-      const target = canvas || document;
-      
-      target.dispatchEvent(eventDown);
       window.dispatchEvent(eventDown);
+      document.dispatchEvent(eventDown);
       
       setTimeout(() => {
-        target.dispatchEvent(eventUp);
         window.dispatchEvent(eventUp);
+        document.dispatchEvent(eventUp);
       }, 50);
     };
 
     return {
-      quickSave: () => triggerKey(113, "F2", "F2"),
-      quickLoad: () => triggerKey(115, "F4", "F4"),
-      openMenu: () => triggerKey(112, "F1", "F1"),
+      quickSave: () => triggerKey("F2"), // F2 is standard for Savestate Slot 1
+      quickLoad: () => triggerKey("F4"), // F4 is standard for Loadstate Slot 1
+      openMenu: () => triggerKey("F1"),  // F1 opens the core emulator settings
       fastForward: () => {
-        triggerKey(32, "Space", " "); 
+        triggerKey("Space"); 
         setIsFastForwarding((prev) => !prev);
       },
       autoFireToggle: () => {
@@ -98,13 +77,13 @@ export default function PlayPage() {
         } else {
           setIsAutoFiring(true);
           autoFireInterval.current = setInterval(() => {
-            // ONLY fires the single key the user defined in the settings!
-            triggerKey(autoFireTarget.keyCode, autoFireTarget.code, autoFireTarget.key); 
+            // Fires the exact Code the user set in the settings
+            triggerKey(autoFireTarget.code); 
           }, 50);
         }
       }
     };
-  }, [autoFireTarget]); // Rebuilds the macro if the user changes the target key
+  }, [autoFireTarget]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
@@ -130,12 +109,10 @@ export default function PlayPage() {
       e.preventDefault();
       
       if (listeningFor === "autoFireTarget") {
-        // We need the full key payload for the macro to work
         const newTarget = { key: e.key, code: e.code, keyCode: e.keyCode };
         setAutoFireTarget(newTarget);
         localStorage.setItem("emu_autofire_target", JSON.stringify(newTarget));
       } else {
-        // Standard HUD hotkeys just need the code
         const newHotkeys = { ...hotkeys, [listeningFor]: e.code };
         setHotkeys(newHotkeys);
         localStorage.setItem("emu_hotkeys", JSON.stringify(newHotkeys));
@@ -228,7 +205,7 @@ export default function PlayPage() {
         <button onClick={commands.openMenu} className="flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-3 rounded-xl transition-colors group col-span-2 md:col-span-1">
           <Menu className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" />
           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Emu Menu</span>
-          <span className="text-[9px] font-mono text-gray-600">Export .SAV File</span>
+          <span className="text-[9px] font-mono text-gray-600">Config & Saves</span>
         </button>
       </div>
 
