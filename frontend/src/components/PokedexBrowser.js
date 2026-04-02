@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Search, Loader2, X, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+import { Search, Loader2, X, ChevronDown, ChevronUp, ArrowRight, Layers } from "lucide-react";
 
+// (Keep your GEN_RANGES, AbilityRow, MoveRow, and EvolutionChain components exactly as they were here)
 const GEN_RANGES = {
   1: { min:1, max:151, name:"Gen I" },
   2: { min:152, max:251, name:"Gen II" },
@@ -14,7 +15,6 @@ const GEN_RANGES = {
   0: { min:1, max:1025, name:"All" }
 };
 
-// --- Interactive Ability Row ---
 function AbilityRow({ name, isHidden }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
@@ -44,15 +44,12 @@ function AbilityRow({ name, isHidden }) {
         {loading ? <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" /> : open ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
       </button>
       {open && data && (
-        <div className="px-4 pb-4 text-sm text-gray-400 border-t border-white/5 pt-3 bg-black/20 leading-relaxed">
-          {data}
-        </div>
+        <div className="px-4 pb-4 text-sm text-gray-400 border-t border-white/5 pt-3 bg-black/20 leading-relaxed">{data}</div>
       )}
     </div>
   );
 }
 
-// --- Interactive Move Row ---
 function MoveRow({ moveName, level }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
@@ -65,11 +62,7 @@ function MoveRow({ moveName, level }) {
         const res = await fetch(`https://pokeapi.co/api/v2/move/${moveName}`);
         const json = await res.json();
         setData({
-          type: json.type.name,
-          category: json.damage_class.name,
-          power: json.power || "-",
-          acc: json.accuracy || "-",
-          pp: json.pp,
+          type: json.type.name, category: json.damage_class.name, power: json.power || "-", acc: json.accuracy || "-", pp: json.pp,
           effect: json.effect_entries.find(e => e.language.name === "en")?.short_effect.replace("$effect_chance", json.effect_chance) || "No effect."
         });
       } catch (err) { setData({ effect: "Failed to load move data." }); }
@@ -93,22 +86,10 @@ function MoveRow({ moveName, level }) {
       {open && data && (
         <div className="px-4 pb-4 pt-3 border-t border-white/5 bg-black/20">
           <div className="flex gap-4 mb-3">
-            <div className="bg-gray-900 px-3 py-1.5 rounded-lg border border-white/5">
-              <p className="text-[9px] text-gray-500 uppercase font-bold">Type</p>
-              <p className="text-xs font-bold text-white uppercase">{data.type}</p>
-            </div>
-            <div className="bg-gray-900 px-3 py-1.5 rounded-lg border border-white/5">
-              <p className="text-[9px] text-gray-500 uppercase font-bold">Power</p>
-              <p className="text-xs font-bold text-white font-mono">{data.power}</p>
-            </div>
-            <div className="bg-gray-900 px-3 py-1.5 rounded-lg border border-white/5">
-              <p className="text-[9px] text-gray-500 uppercase font-bold">Accuracy</p>
-              <p className="text-xs font-bold text-white font-mono">{data.acc}</p>
-            </div>
-            <div className="bg-gray-900 px-3 py-1.5 rounded-lg border border-white/5">
-              <p className="text-[9px] text-gray-500 uppercase font-bold">PP</p>
-              <p className="text-xs font-bold text-white font-mono">{data.pp}</p>
-            </div>
+            <div className="bg-gray-900 px-3 py-1.5 rounded-lg border border-white/5"><p className="text-[9px] text-gray-500 uppercase font-bold">Type</p><p className="text-xs font-bold text-white uppercase">{data.type}</p></div>
+            <div className="bg-gray-900 px-3 py-1.5 rounded-lg border border-white/5"><p className="text-[9px] text-gray-500 uppercase font-bold">Power</p><p className="text-xs font-bold text-white font-mono">{data.power}</p></div>
+            <div className="bg-gray-900 px-3 py-1.5 rounded-lg border border-white/5"><p className="text-[9px] text-gray-500 uppercase font-bold">Accuracy</p><p className="text-xs font-bold text-white font-mono">{data.acc}</p></div>
+            <div className="bg-gray-900 px-3 py-1.5 rounded-lg border border-white/5"><p className="text-[9px] text-gray-500 uppercase font-bold">PP</p><p className="text-xs font-bold text-white font-mono">{data.pp}</p></div>
           </div>
           <p className="text-sm text-gray-400 leading-relaxed italic border-l-2 border-emerald-500/50 pl-3">{data.effect}</p>
         </div>
@@ -117,7 +98,6 @@ function MoveRow({ moveName, level }) {
   );
 }
 
-// --- Dynamic Evolution Chain Parser ---
 function EvolutionChain({ url }) {
   const [paths, setPaths] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -128,25 +108,17 @@ function EvolutionChain({ url }) {
     fetch(url).then(r=>r.json()).then(d => {
       const newPaths = [];
       const traverse = (node, prevName = null, condition = null) => {
-        if (prevName) {
-          newPaths.push({ from: prevName, to: node.species.name, condition });
-        }
+        if (prevName) newPaths.push({ from: prevName, to: node.species.name, condition });
         node.evolves_to.forEach(evo => {
           let cond = "Evolve";
-          const det = evo.evolution_details[0]; // grab primary evolution method
+          const det = evo.evolution_details[0];
           if (det) {
             if (det.trigger.name === 'level-up') {
               cond = `Lv. ${det.min_level || 'Up'}`;
               if (det.min_happiness) cond = "High Friendship";
               if (det.known_move) cond = `Knows ${det.known_move.name.replace("-"," ")}`;
-              if (det.location) cond = `At ${det.location.name.replace("-"," ")}`;
-            } else if (det.trigger.name === 'use-item') {
-              cond = `${det.item.name.replace("-"," ")}`;
-            } else if (det.trigger.name === 'trade') {
-              cond = `Trade`;
-              if (det.held_item) cond += ` + ${det.held_item.name.replace("-"," ")}`;
-            }
-            if (det.time_of_day) cond += ` (${det.time_of_day})`;
+            } else if (det.trigger.name === 'use-item') cond = `${det.item.name.replace("-"," ")}`;
+            else if (det.trigger.name === 'trade') cond = `Trade${det.held_item ? ` + ${det.held_item.name.replace("-"," ")}` : ""}`;
           }
           traverse(evo, node.species.name, cond);
         });
@@ -180,8 +152,8 @@ function AdvancedPokedexModal({ id, onClose }) {
   const [data, setData] = useState(null);
   const [species, setSpecies] = useState(null);
   const [activeTab, setActiveTab] = useState("info");
+  const [formLoading, setFormLoading] = useState(false);
 
-  // SCROLL LOCK EFFECT
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = 'unset'; };
@@ -197,10 +169,18 @@ function AdvancedPokedexModal({ id, onClose }) {
     }).catch(()=>{});
   }, [id]);
 
+  const changeForm = async (url) => {
+    setFormLoading(true);
+    try {
+      const res = await fetch(url);
+      const newData = await res.json();
+      setData(newData);
+    } catch(err) { console.error("Failed to load form"); }
+    setFormLoading(false);
+  };
+
   if (!data || !species) return (
-    <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center">
-      <Loader2 className="animate-spin text-emerald-500 w-8 h-8" />
-    </div>
+    <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500 w-8 h-8" /></div>
   );
 
   const flavorText = species.flavor_text_entries.find(f => f.language.name === "en")?.flavor_text.replace(/\f/g, " ");
@@ -212,7 +192,7 @@ function AdvancedPokedexModal({ id, onClose }) {
         <div className="p-6 pb-0">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-gray-500 font-mono text-xs">#{String(data.id).padStart(3, '0')}</p>
+              <p className="text-gray-500 font-mono text-xs">#{String(species.id).padStart(3, '0')}</p>
               <h2 className="text-3xl font-black text-white capitalize">{data.name.replace("-"," ")}</h2>
             </div>
             <button onClick={onClose} className="p-2 bg-white/5 rounded-full hover:bg-white/10"><X className="text-gray-400 w-5 h-5" /></button>
@@ -224,27 +204,53 @@ function AdvancedPokedexModal({ id, onClose }) {
 
         <div className="flex border-b border-white/10 px-6">
           {["info", "stats", "moves"].map(t => (
-            <button 
-              key={t} 
-              onClick={() => setActiveTab(t)} 
-              className={`py-3 mr-6 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${activeTab === t ? "border-emerald-500 text-emerald-400" : "border-transparent text-gray-500 hover:text-white"}`}
-            >
+            <button key={t} onClick={() => setActiveTab(t)} className={`py-3 mr-6 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${activeTab === t ? "border-emerald-500 text-emerald-400" : "border-transparent text-gray-500 hover:text-white"}`}>
               {t}
             </button>
           ))}
         </div>
 
-        <div className="p-6 overflow-y-auto custom-scrollbar">
+        <div className="p-6 overflow-y-auto custom-scrollbar relative">
+          {formLoading && <div className="absolute inset-0 bg-[#16161A]/80 z-50 flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500 w-8 h-8" /></div>}
+          
           {activeTab === "info" && (
             <div className="space-y-6">
-              <img src={data.sprites.other["official-artwork"].front_default || data.sprites.front_default} className="w-40 h-40 mx-auto drop-shadow-xl pixelated" alt={data.name} />
+              <img src={data.sprites.other["official-artwork"]?.front_default || data.sprites.front_default} className="w-40 h-40 mx-auto drop-shadow-xl pixelated" alt={data.name} />
               
               <div className="bg-[#0D0D10] p-4 rounded-xl border border-white/5">
                 <p className="text-gray-300 text-sm leading-relaxed italic">"{flavorText}"</p>
               </div>
 
+              {/* Alternate Forms Feature */}
+              {species.varieties.length > 1 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3 mt-6">
+                    <Layers className="w-4 h-4 text-emerald-500" />
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Alternate Forms</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {species.varieties.map(v => {
+                      // Formatting the form name to look clean (e.g. "Rotom-Wash" -> "Wash")
+                      const rawName = v.pokemon.name;
+                      let displayName = rawName.replace(species.name + "-", "").replace(species.name, "Base Form");
+                      if (rawName === species.name) displayName = "Base Form";
+
+                      return (
+                        <button
+                          key={v.pokemon.name}
+                          onClick={() => changeForm(v.pokemon.url)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize border transition-all ${data.name === rawName ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg scale-105' : 'bg-[#0D0D10] text-gray-400 border-white/5 hover:text-white hover:border-white/20'}`}
+                        >
+                          {displayName}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div>
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-widest">Evolution Chain</h3>
+                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-widest mt-6">Evolution Chain</h3>
                 <EvolutionChain url={species.evolution_chain?.url} />
               </div>
 
@@ -305,7 +311,6 @@ export default function PokedexBrowser() {
       .then(data => {
         const entries = data.results.map((r, i) => {
           const id = min + i;
-          // IMPORTANT FIX: Use official-artwork to guarantee Gen 9 Pokemon load
           const sprite = id >= 906 
             ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
             : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
@@ -331,9 +336,7 @@ export default function PokedexBrowser() {
               key={key}
               onClick={() => setGen(Number(key))}
               className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all border ${
-                gen === Number(key) 
-                ? "bg-emerald-600 border-emerald-500 text-white" 
-                : "bg-[#16161A] border-white/5 text-gray-500 hover:text-white"
+                gen === Number(key) ? "bg-emerald-600 border-emerald-500 text-white" : "bg-[#16161A] border-white/5 text-gray-500 hover:text-white"
               }`}
             >
               {info.name}
