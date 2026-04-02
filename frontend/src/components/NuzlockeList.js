@@ -12,7 +12,6 @@ export default function NuzlockeList() {
 
   const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
 
-  // FIX: Wrapped fetchRuns in useCallback to satisfy ESLint dependency rules
   const fetchRuns = useCallback(async () => {
     try {
       setLoading(true);
@@ -27,7 +26,6 @@ export default function NuzlockeList() {
     }
   }, [API_URL]);
 
-  // FIX: Added fetchRuns to the dependency array
   useEffect(() => {
     fetchRuns();
   }, [fetchRuns]);
