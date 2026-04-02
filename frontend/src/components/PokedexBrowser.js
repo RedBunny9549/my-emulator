@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import Navbar from "./Navbar";
+// Removed local Navbar import since it's global in App.js
 import { Search, X, Loader2, ChevronLeft, ChevronRight, Filter, Zap, Shield, Swords, Star, BookOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { TYPE_COLOR } from "../data/typeData";
 
@@ -10,11 +10,11 @@ const GEN_RANGES = {
   2: { min:152, max:251,  name:"Generation II",   game:"Gold / Silver / Crystal" },
   3: { min:252, max:386,  name:"Generation III",  game:"Ruby / Sapphire / Emerald"},
   4: { min:387, max:493,  name:"Generation IV",   game:"Diamond / Pearl / Platinum"},
-  5: { min:494, max:649,  name:"Generation V",    game:"Black / White"           },
-  6: { min:650, max:721,  name:"Generation VI",   game:"X / Y"                   },
-  7: { min:722, max:809,  name:"Generation VII",  game:"Sun / Moon"              },
-  8: { min:810, max:905,  name:"Generation VIII", game:"Sword / Shield"          },
-  9: { min:906, max:1025, name:"Generation IX",   game:"Scarlet / Violet"        },
+  5: { min:494, max:649,  name:"Generation V",    game:"Black / White"            },
+  6: { min:650, max:721,  name:"Generation VI",   game:"X / Y"                    },
+  7: { min:722, max:809,  name:"Generation VII",  game:"Sun / Moon"               },
+  8: { min:810, max:905,  name:"Generation VIII", game:"Sword / Shield"           },
+  9: { min:906, max:1025, name:"Generation IX",   game:"Scarlet / Violet"         },
 };
 
 const GEN_NOTES = {
@@ -29,7 +29,6 @@ const GEN_NOTES = {
   9:"Open world. Terastallization changes type. Paradox Pokémon. Many returning Pokémon.",
 };
 
-// Recommended movesets for popular Pokémon
 const RECOMMENDED_SETS = {
   charizard: {
     role: "Offensive Wallbreaker",
@@ -142,7 +141,7 @@ function TypeBadge({ type, small }) {
 
 function StatBar({ name, value }) {
   const pct = Math.round((value/255)*100);
-  const color = value>=100?"#34d399":value>=70?"#fbbf24":"#f87171";
+  const color = value>=100?"#10b981":value>=70?"#fbbf24":"#f87171";
   return (
     <div className="flex items-center gap-2">
       <span className="text-gray-500 text-xs w-8 flex-shrink-0">{STAT_LABELS[name]||name}</span>
@@ -181,8 +180,6 @@ function Section({ title, icon: Icon, children, defaultOpen = true }) {
   );
 }
 
-// ─── Move Row ────────────────────────────────────────────────────────────────
-
 function MoveRow({ moveName, method, level }) {
   const [data, setData] = useState(moveCache[moveName] || null);
   const [open, setOpen] = useState(false);
@@ -214,21 +211,15 @@ function MoveRow({ moveName, method, level }) {
         onClick={() => setOpen(v=>!v)}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/[0.03] transition-colors text-left"
       >
-        {/* Method badge */}
         <span className="text-[9px] font-mono text-gray-600 w-10 flex-shrink-0">
           {method === "level-up" ? (level ? `Lv${level}` : "—") : MOVE_METHOD_LABELS[method] || method}
         </span>
-        {/* Name */}
         <span className="text-gray-200 text-xs capitalize flex-1 font-medium">{moveName.replace(/-/g," ")}</span>
-        {/* Type */}
         {data && <TypeBadge type={data.type} small />}
-        {/* Category */}
         {data && <CategoryBadge cat={data.category} />}
-        {/* Power */}
         <span className="text-gray-500 text-[10px] font-mono w-8 text-right flex-shrink-0">
           {data ? (data.power || "—") : ""}
         </span>
-        {/* Acc */}
         <span className="text-gray-500 text-[10px] font-mono w-8 text-right flex-shrink-0">
           {data ? (data.accuracy ? `${data.accuracy}%` : "—") : ""}
         </span>
@@ -247,8 +238,6 @@ function MoveRow({ moveName, method, level }) {
     </div>
   );
 }
-
-// ─── Ability Row ──────────────────────────────────────────────────────────────
 
 function AbilityRow({ name, isHidden }) {
   const [data, setData] = useState(abilityCache[name] || null);
@@ -288,8 +277,6 @@ function AbilityRow({ name, isHidden }) {
   );
 }
 
-// ─── Detail Modal ─────────────────────────────────────────────────────────────
-
 function DetailModal({ id, gen, onClose, onPrev, onNext }) {
   const [poke, setPoke] = useState(null);
   const [species, setSpecies] = useState(null);
@@ -313,10 +300,10 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
   }, [id]);
 
   if (!poke && !loading) return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center" onClick={onClose}>
       <div className="bg-[#141417] border border-white/10 rounded-xl p-8 text-center">
         <p className="text-gray-400">Failed to load.</p>
-        <button onClick={onClose} className="mt-3 text-emerald-400 text-sm">Close</button>
+        <button onClick={onClose} className="mt-3 text-[#4a9fd4] text-sm">Close</button>
       </div>
     </div>
   );
@@ -325,7 +312,6 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
   const animSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`;
   const staticSprite = poke?.sprites?.other?.["official-artwork"]?.front_default || poke?.sprites?.front_default;
 
-  // Group moves by learn method
   const movesByMethod = {};
   if (poke) {
     for (const m of poke.moves) {
@@ -341,7 +327,6 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
         }
       }
     }
-    // Sort level-up moves by level
     if (movesByMethod["level-up"]) {
       movesByMethod["level-up"].sort((a,b) => a.level - b.level);
     }
@@ -349,15 +334,10 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
 
   const availableTabs = ["level-up","machine","egg","tutor"].filter(t => movesByMethod[t]?.length > 0);
   const currentMoves = movesByMethod[moveTab] || [];
-
-  // Pokédex flavor texts for this gen
   const flavorEntries = species?.flavor_text_entries?.filter(e => e.language.name === "en") || [];
   const flavor = flavorEntries.slice(-3);
-
-  // Recommended set
   const recSet = poke ? RECOMMENDED_SETS[poke.name] : null;
 
-  // Gen-specific notes
   const genNotes = [];
   if (poke && gen <= 1) {
     genNotes.push("Abilities don't exist in Gen 1.");
@@ -369,10 +349,10 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
   if (gen >= 6 && poke?.types.some(t=>t.type.name==="dragon")) genNotes.push("Fairy now counters Dragon — be wary.");
 
   const primaryType = poke?.types[0]?.type.name;
-  const accentColor = primaryType ? (TYPE_COLOR[primaryType]||"#10b981") : "#10b981";
+  const accentColor = primaryType ? (TYPE_COLOR[primaryType]||"#4a9fd4") : "#4a9fd4";
 
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-3" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[60] flex items-center justify-center p-3" onClick={onClose}>
       <div
         className="bg-[#0f0f12] border border-white/10 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[95vh] overflow-y-auto"
         onClick={e=>e.stopPropagation()}
@@ -384,10 +364,8 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
           </div>
         ) : (
           <>
-            {/* Hero */}
             <div style={{ background:`linear-gradient(135deg, ${accentColor}15 0%, transparent 60%)` }} className="px-6 pt-6 pb-4">
               <div className="flex items-start gap-5">
-                {/* Sprite */}
                 <div className="flex flex-col items-center gap-2 flex-shrink-0">
                   <div className="relative">
                     <img
@@ -406,12 +384,11 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
                   </button>
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-gray-500 text-xs font-mono">#{String(poke.id).padStart(3,"0")}</p>
-                      <h2 className="text-2xl font-bold text-white capitalize mt-0.5" style={{ fontFamily:"Outfit" }}>
+                      <h2 className="text-2xl font-bold text-white capitalize mt-0.5">
                         {poke.name.replace(/-/g," ")}
                       </h2>
                       {species && <p className="text-gray-500 text-xs capitalize">{species.genera?.find(g=>g.language.name==="en")?.genus}</p>}
@@ -438,18 +415,11 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
                       <p className="text-white font-mono text-lg">{(poke.weight/10).toFixed(1)}kg</p>
                       <p className="text-gray-600 text-[10px] uppercase tracking-wider">Weight</p>
                     </div>
-                    {species && (
-                      <div className="text-center">
-                        <p className="text-white font-mono text-lg capitalize">{species.growth_rate?.name?.replace(/-/g," ")}</p>
-                        <p className="text-gray-600 text-[10px] uppercase tracking-wider">Growth</p>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Gen notes */}
             {genNotes.length > 0 && (
               <div className="mx-5 mb-1 bg-yellow-500/5 border border-yellow-500/20 rounded-xl px-4 py-3">
                 <p className="text-yellow-500 text-[10px] font-bold uppercase tracking-wider mb-1">Gen {gen} Mechanics</p>
@@ -457,20 +427,16 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
               </div>
             )}
 
-            {/* Pokédex Entries */}
-            {flavor.length > 0 && (
-              <Section title="Pokédex Entries" icon={BookOpen}>
-                <div className="space-y-2">
-                  {flavor.map((f,i) => (
-                    <p key={i} className="text-gray-400 text-sm leading-relaxed italic border-l-2 pl-3" style={{ borderColor:accentColor+"40" }}>
-                      {f.flavor_text.replace(/\f/g," ")}
-                    </p>
-                  ))}
-                </div>
-              </Section>
-            )}
+            <Section title="Pokédex Entries" icon={BookOpen}>
+              <div className="space-y-2">
+                {flavor.map((f,i) => (
+                  <p key={i} className="text-gray-400 text-sm leading-relaxed italic border-l-2 pl-3" style={{ borderColor:accentColor+"40" }}>
+                    {f.flavor_text.replace(/\f/g," ")}
+                  </p>
+                ))}
+              </div>
+            </Section>
 
-            {/* Stats */}
             <Section title="Base Stats" icon={Shield}>
               <div className="space-y-1.5">
                 {poke.stats.map(s=><StatBar key={s.stat.name} name={s.stat.name} value={s.base_stat} />)}
@@ -482,10 +448,9 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
               </div>
             </Section>
 
-            {/* Abilities */}
             <Section title={gen >= 3 ? "Abilities" : "Abilities (Gen 3+)"} icon={Zap}>
               {gen < 3 ? (
-                <p className="text-gray-600 text-xs">Abilities were introduced in Generation III (Ruby & Sapphire).</p>
+                <p className="text-gray-600 text-xs">Abilities were introduced in Generation III.</p>
               ) : (
                 <div className="space-y-2">
                   {poke.abilities.map(a=>(
@@ -495,11 +460,10 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
               )}
             </Section>
 
-            {/* Recommended Moveset */}
             {recSet && (
               <Section title="Recommended Moveset" icon={Star} defaultOpen={true}>
-                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-3">
-                  <p className="text-emerald-400 text-xs font-bold mb-1">{recSet.role}</p>
+                <div className="bg-[#4a9fd4]/5 border border-[#4a9fd4]/20 rounded-xl p-4 mb-3">
+                  <p className="text-[#4a9fd4] text-xs font-bold mb-1">{recSet.role}</p>
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {recSet.set.map(m=>(
                       <span key={m} className="text-xs px-2 py-1 bg-white/5 text-gray-200 rounded-lg border border-white/5">{m}</span>
@@ -510,314 +474,9 @@ function DetailModal({ id, gen, onClose, onPrev, onNext }) {
               </Section>
             )}
 
-            {/* Moves */}
             <Section title="Moves" icon={Swords} defaultOpen={false}>
-              {/* Move headers */}
-              <div className="flex items-center justify-end gap-1 mb-2 pr-1">
-                <span className="text-[10px] text-gray-600 w-8 text-right">Pwr</span>
-                <span className="text-[10px] text-gray-600 w-8 text-right">Acc</span>
-                <span className="w-3" />
-              </div>
-
-              {/* Tabs */}
               <div className="flex gap-1 mb-3 flex-wrap">
                 {availableTabs.map(t=>(
                   <button
                     key={t}
-                    onClick={()=>setMoveTab(t)}
-                    className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
-                      moveTab===t
-                        ? "text-white border-white/20 bg-white/10"
-                        : "text-gray-500 border-white/5 hover:border-white/10 hover:text-gray-300"
-                    }`}
-                  >
-                    {MOVE_METHOD_LABELS[t]||t} <span className="text-[10px] text-gray-600 ml-1">{movesByMethod[t]?.length}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
-                {currentMoves.map((m,i)=>(
-                  <MoveRow key={`${m.name}-${i}`} moveName={m.name} method={moveTab} level={m.level} />
-                ))}
-                {currentMoves.length === 0 && (
-                  <p className="text-gray-600 text-xs text-center py-4">No moves via this method.</p>
-                )}
-              </div>
-            </Section>
-
-            {/* Species info */}
-            {species && (
-              <Section title="Species Info" defaultOpen={false}>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label:"Catch Rate", value: species.capture_rate },
-                    { label:"Base Happiness", value: species.base_happiness },
-                    { label:"Egg Groups", value: species.egg_groups?.map(e=>e.name).join(", ") },
-                    { label:"Hatch Steps", value: species.hatch_counter ? `${species.hatch_counter * 255} steps` : "—" },
-                    { label:"Gender Ratio", value: species.gender_rate === -1 ? "Genderless" : `${(8-species.gender_rate)/8*100}% M / ${species.gender_rate/8*100}% F` },
-                    { label:"Habitat", value: species.habitat?.name || "—" },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="bg-[#0A0A0C] border border-white/5 rounded-lg p-3">
-                      <p className="text-gray-600 text-[10px] uppercase tracking-wider mb-0.5">{label}</p>
-                      <p className="text-white text-xs capitalize font-mono">{value ?? "—"}</p>
-                    </div>
-                  ))}
-                </div>
-              </Section>
-            )}
-
-            {/* Prev / Next */}
-            <div className="flex items-center justify-between px-5 py-4 border-t border-white/5">
-              <button onClick={onPrev} className="flex items-center gap-1 text-gray-500 hover:text-white text-sm transition-colors">
-                <ChevronLeft className="w-4 h-4" /> Prev
-              </button>
-              <span className="text-gray-700 text-xs font-mono">#{String(poke.id).padStart(3,"0")}</span>
-              <button onClick={onNext} className="flex items-center gap-1 text-gray-500 hover:text-white text-sm transition-colors">
-                Next <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Pokémon Card ─────────────────────────────────────────────────────────────
-
-function PokeCard({ entry, onClick }) {
-  const [sprite, setSprite] = useState(null);
-  const [animFailed, setAnimFailed] = useState(false);
-
-  const animSrc = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${entry.id}.gif`;
-
-  useEffect(() => {
-    if (detailCache[entry.id]?.poke) {
-      setSprite(detailCache[entry.id].poke.sprites.front_default);
-      return;
-    }
-    fetch(`https://pokeapi.co/api/v2/pokemon/${entry.id}`)
-      .then(r=>r.json())
-      .then(p => {
-        if (!detailCache[entry.id]) detailCache[entry.id] = { poke:p };
-        else detailCache[entry.id].poke = p;
-        setSprite(p.sprites.front_default);
-      }).catch(()=>{});
-  }, [entry.id]);
-
-  const primaryType = entry.types?.[0];
-  const accent = primaryType ? (TYPE_COLOR[primaryType]||"#888") : "#888";
-
-  return (
-    <button
-      onClick={onClick}
-      className="bg-[#141417] border border-white/5 hover:border-white/15 hover:-translate-y-0.5 rounded-xl p-3 flex flex-col items-center gap-1.5 transition-all cursor-pointer group"
-      style={{ "--accent": accent }}
-    >
-      <div className="relative w-20 h-20 flex items-center justify-center">
-        {!animFailed ? (
-          <img
-            src={animSrc}
-            alt={entry.name}
-            onError={() => setAnimFailed(true)}
-            className="w-16 h-16 object-contain group-hover:scale-110 transition-transform"
-            style={{ imageRendering:"pixelated" }}
-          />
-        ) : sprite ? (
-          <img
-            src={sprite}
-            alt={entry.name}
-            className="w-16 h-16 object-contain group-hover:scale-110 transition-transform"
-            style={{ imageRendering:"pixelated" }}
-          />
-        ) : (
-          <div className="w-16 h-16 rounded-full bg-gray-800/40 flex items-center justify-center">
-            <Loader2 className="w-5 h-5 text-gray-700 animate-spin" />
-          </div>
-        )}
-      </div>
-      <p className="text-gray-600 text-[10px] font-mono">#{String(entry.id).padStart(3,"0")}</p>
-      <p className="text-white text-xs font-medium capitalize text-center leading-tight">{entry.name.replace(/-/g," ")}</p>
-      <div className="flex gap-1 flex-wrap justify-center">
-        {entry.types?.map(t=><TypeBadge key={t} type={t} small />)}
-      </div>
-    </button>
-  );
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-export default function PokedexBrowser() {
-  const [gen, setGen] = useState(1);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState(null);
-  const [allEntries, setAllEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
-  const abortRef = useRef(null);
-
-  useEffect(() => {
-    setLoading(true); setPage(0); setAllEntries([]); setSelected(null);
-    if (abortRef.current) abortRef.current.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    const { min, max } = GEN_RANGES[gen];
-    const cacheKey = `gen-${gen}`;
-    if (listCache[cacheKey]) { setAllEntries(listCache[cacheKey]); setLoading(false); return; }
-
-    const ids = Array.from({ length: max - min + 1 }, (_,i) => min + i);
-    const BATCH = 20;
-    let results = [];
-
-    (async () => {
-      for (let i = 0; i < ids.length; i += BATCH) {
-        if (controller.signal.aborted) return;
-        const batch = ids.slice(i, i + BATCH);
-        const data = await Promise.all(
-          batch.map(id =>
-            fetch(`https://pokeapi.co/api/v2/pokemon/${id}`, { signal: controller.signal })
-              .then(r=>r.json())
-              .then(p => {
-                const entry = { id:p.id, name:p.name, types:p.types.map(t=>t.type.name) };
-                if (!detailCache[id]) detailCache[id] = { poke:p };
-                else detailCache[id].poke = p;
-                return entry;
-              })
-              .catch(()=>null)
-          )
-        );
-        results = [...results, ...data.filter(Boolean)];
-        if (!controller.signal.aborted) setAllEntries([...results]);
-      }
-      if (!controller.signal.aborted) { listCache[cacheKey] = results; setLoading(false); }
-    })();
-
-    return () => controller.abort();
-  }, [gen]);
-
-  const filtered = allEntries.filter(e => {
-    if (search && !e.name.includes(search.toLowerCase().replace(/\s+/g,"-"))) return false;
-    if (typeFilter && !e.types.includes(typeFilter)) return false;
-    return true;
-  });
-
-  const pages = Math.ceil(filtered.length / PAGE_SIZE);
-  const visible = filtered.slice(page * PAGE_SIZE, (page+1) * PAGE_SIZE);
-  const selectedIdx = selected ? filtered.findIndex(e=>e.id===selected) : -1;
-
-  const goNext = useCallback(() => {
-    if (selectedIdx < filtered.length-1) setSelected(filtered[selectedIdx+1].id);
-  }, [selectedIdx, filtered]);
-
-  const goPrev = useCallback(() => {
-    if (selectedIdx > 0) setSelected(filtered[selectedIdx-1].id);
-  }, [selectedIdx, filtered]);
-
-  return (
-    <div className="min-h-screen bg-[#0A0A0C]">
-      <Navbar />
-      <div className="max-w-6xl mx-auto px-4 py-8">
-
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white" style={{ fontFamily:"Outfit" }}>Pokédex</h1>
-          <p className="text-gray-500 text-sm mt-1">{GEN_RANGES[gen].name} · {GEN_RANGES[gen].game} · #{GEN_RANGES[gen].min}–{GEN_RANGES[gen].max}</p>
-        </div>
-
-        {/* Gen selector */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {Object.entries(GEN_RANGES).map(([g,info]) => (
-            <button key={g} onClick={() => { setGen(Number(g)); setSearch(""); setTypeFilter(null); setPage(0); }}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all ${gen===Number(g) ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "border-white/5 text-gray-500 hover:text-gray-300 hover:border-white/10"}`}>
-              Gen {g}
-            </button>
-          ))}
-        </div>
-
-        {/* Gen mechanics note */}
-        <div className="mb-5 bg-[#141417] border border-white/5 rounded-xl px-4 py-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">Gen {gen} Mechanics</p>
-          <p className="text-gray-500 text-xs leading-relaxed">{GEN_NOTES[gen]}</p>
-        </div>
-
-        {/* Search + filter */}
-        <div className="flex gap-2 mb-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-            <input value={search} onChange={e=>{ setSearch(e.target.value); setPage(0); }}
-              placeholder="Search Pokémon..."
-              className="w-full bg-[#141417] border border-white/5 focus:border-emerald-500/50 text-white placeholder-gray-600 text-sm pl-9 pr-4 py-2.5 rounded-lg outline-none transition-colors" />
-            {search && <button onClick={()=>setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white"><X className="w-3.5 h-3.5" /></button>}
-          </div>
-          <button onClick={()=>setShowFilters(v=>!v)}
-            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg border text-sm transition-all ${typeFilter ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "border-white/5 text-gray-500 hover:text-gray-300"}`}>
-            <Filter className="w-4 h-4" />
-            {typeFilter || "Type"}
-          </button>
-        </div>
-
-        {showFilters && (
-          <div className="flex flex-wrap gap-1.5 mb-4 p-3 bg-[#141417] border border-white/5 rounded-xl">
-            <button onClick={()=>{ setTypeFilter(null); setPage(0); }}
-              className={`text-xs px-2 py-1 rounded border transition-all ${!typeFilter ? "border-white/30 text-white" : "border-white/5 text-gray-600 hover:text-gray-300"}`}>All</button>
-            {ALL_TYPES.map(t => (
-              <button key={t} onClick={()=>{ setTypeFilter(typeFilter===t?null:t); setPage(0); }}
-                style={typeFilter===t ? { background:TYPE_COLOR[t]+"25", color:TYPE_COLOR[t], borderColor:TYPE_COLOR[t]+"50" } : {}}
-                className={`text-xs px-2 py-1 rounded border capitalize transition-all ${typeFilter===t ? "" : "border-white/5 text-gray-500 hover:text-gray-300 hover:border-white/10"}`}>
-                {t}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <p className="text-gray-600 text-xs mb-4">
-          {loading && allEntries.length === 0 ? "Loading..." : `${filtered.length} Pokémon`}
-          {(search || typeFilter) && ` filtered from ${allEntries.length}`}
-        </p>
-
-        {visible.length > 0 ? (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-            {visible.map(entry => <PokeCard key={entry.id} entry={entry} onClick={()=>setSelected(entry.id)} />)}
-          </div>
-        ) : (
-          <div className="text-center py-16 text-gray-600">
-            {loading ? (
-              <div className="flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-sm">Loading Gen {gen}... {allEntries.length}/{GEN_RANGES[gen].max - GEN_RANGES[gen].min + 1}</span>
-              </div>
-            ) : "No Pokémon found."}
-          </div>
-        )}
-
-        {loading && allEntries.length > 0 && (
-          <div className="flex items-center justify-center gap-2 mt-4 text-gray-600 text-xs">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            Loading... {allEntries.length}/{GEN_RANGES[gen].max - GEN_RANGES[gen].min + 1}
-          </div>
-        )}
-
-        {pages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-6">
-            <button onClick={()=>setPage(p=>Math.max(0,p-1))} disabled={page===0}
-              className="p-2 rounded-lg border border-white/5 text-gray-500 hover:text-white disabled:opacity-30 transition-colors">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-gray-500 text-sm">Page {page+1} of {pages}</span>
-            <button onClick={()=>setPage(p=>Math.min(pages-1,p+1))} disabled={page===pages-1}
-              className="p-2 rounded-lg border border-white/5 text-gray-500 hover:text-white disabled:opacity-30 transition-colors">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {selected && (
-        <DetailModal id={selected} gen={gen} onClose={()=>setSelected(null)} onPrev={goPrev} onNext={goNext} />
-      )}
-    </div>
-  );
-}
+                    onClick={()=>setMoveTab
