@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
-import { Search, Loader2, LayoutGrid, Filter } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 
 const GEN_RANGES = {
-  1: { min:1, max:151, name:"Gen I" },
-  2: { min:152, max:251, name:"Gen II" },
-  3: { min:252, max:386, name:"Gen III" },
-  4: { min:387, max:493, name:"Gen IV" },
-  5: { min:494, max:649, name:"Gen V" },
-  0: { min:1, max:649, name:"All" } // "All" button range
+  1: { min:1,   max:151,  name:"Gen I" },
+  2: { min:152, max:251,  name:"Gen II" },
+  3: { min:252, max:386,  name:"Gen III" },
+  4: { min:387, max:493,  name:"Gen IV" },
+  5: { min:494, max:649,  name:"Gen V" },
+  6: { min:650, max:721,  name:"Gen VI" },
+  7: { min:722, max:809,  name:"Gen VII" },
+  8: { min:810, max:905,  name:"Gen VIII" },
+  9: { min:906, max:1025, name:"Gen IX" },
+  0: { min:1,   max:1025, name:"All" }
 };
 
 export default function PokedexBrowser() {
@@ -35,13 +39,13 @@ export default function PokedexBrowser() {
   const filtered = allEntries.filter(p => p.name.includes(search.toLowerCase()));
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-end mb-6">
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-emerald-500">Pokédex</h1>
           <p className="text-gray-500 text-sm">Classic Reference</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {Object.entries(GEN_RANGES).map(([key, info]) => (
             <button
               key={key}
@@ -64,16 +68,16 @@ export default function PokedexBrowser() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search Pokémon..." 
-          className="w-full bg-[#16161A] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-emerald-500/50"
+          className="w-full bg-[#16161A] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-emerald-500/50 text-white"
         />
       </div>
 
-      {loading ? <Loader2 className="animate-spin mx-auto text-emerald-500" /> : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+      {loading ? <Loader2 className="animate-spin mx-auto text-emerald-500 mt-20 w-8 h-8" /> : (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
           {filtered.map(p => (
             <div key={p.id} className="bg-[#16161A] border border-white/5 p-4 rounded-2xl flex flex-col items-center hover:border-emerald-500/30 transition-all group">
               <img src={p.sprite} className="w-16 h-16 group-hover:scale-110 transition-transform pixelated" alt={p.name} />
-              <span className="text-[10px] font-mono text-gray-600">#{String(p.id).padStart(3, '0')}</span>
+              <span className="text-[10px] font-mono text-gray-600 mt-2">#{String(p.id).padStart(3, '0')}</span>
               <span className="text-xs font-bold capitalize text-gray-300 mt-1">{p.name}</span>
             </div>
           ))}
