@@ -22,52 +22,23 @@ function App() {
 
   const loadRom = (file) => {
     const ext = file.name.toLowerCase().split(".").pop();
-    
-    // Fix: Use 'gambatte' for GB/GBC to ensure they boot correctly
     let core = "mgba";
-    if (ext === "gbc" || ext === "gb") {
-      core = "gambatte";
-    }
+    if (ext === "gbc" || ext === "gb") core = "gambatte";
 
     setRomFile(file);
     setCoreType(core);
     setGameTitle(file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " "));
-
-    try {
-      const stored = JSON.parse(localStorage.getItem("recent_roms") || "[]");
-      const existing = stored.find((r) => r.name === file.name);
-      const entry = {
-        name: file.name,
-        size: file.size,
-        lastPlayed: Date.now(),
-        core,
-        playCount: existing ? (existing.playCount || 1) + 1 : 1,
-      };
-      const filtered = stored.filter((r) => r.name !== file.name);
-      localStorage.setItem("recent_roms", JSON.stringify([entry, ...filtered].slice(0, 10)));
-    } catch (_) {}
   };
 
   return (
     <EmuContext.Provider value={{ romFile, biosFile, setBiosFile, gameTitle, coreType, loadRom }}>
+      {/* Use the Mudkip Navy background across all pages */}
       <div className="App bg-[#0a1628] min-h-screen text-white">
         <BrowserRouter>
           <Navbar />
-          <Routes>
-            <Route path="/"            element={<Navigate to="/play" replace />} />
-            <Route path="/play"        element={<PlayPage />} />
-            <Route path="/library"     element={<LibraryPage />} />
-            <Route path="/nuzlocke"    element={<NuzlockeList />} />
-            <Route path="/nuzlocke/:runId" element={<NuzlockeRunPage />} />
-            <Route path="/bosses"      element={<BossGuide />} />
-            <Route path="/routes"      element={<RouteBrowser />} />
-            <Route path="/pokedex"     element={<PokedexBrowser />} />
-            <Route path="/coverage"    element={<TypeCoverageMap />} />
-          </Routes>
-        </BrowserRouter>
-      </div>
-    </EmuContext.Provider>
-  );
-}
-
-export default App;
+          {/* Main content container with padding to prevent Navbar overlap */}
+          <main className="pt-4">
+            <Routes>
+              <Route path="/"            element={<Navigate to="/play" replace />} />
+              <Route path="/play"        element={<PlayPage />} />
+              <Route path="/library"     element={<LibraryPage />} />
