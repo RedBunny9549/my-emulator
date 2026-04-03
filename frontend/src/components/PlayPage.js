@@ -9,7 +9,7 @@ const DEFAULT_HOTKEYS = {
   autoFireToggle: "KeyP" 
 };
 
-// Auto-fire defaults to 'E' (Your 'A' button)
+// Auto-fire defaults to 'E'
 const DEFAULT_AUTOFIRE_TARGET = { key: "e", code: "KeyE", keyCode: 69 };
 
 export default function PlayPage() {
@@ -42,33 +42,26 @@ export default function PlayPage() {
   const romRef = useRef(null);
   const autoFireInterval = useRef(null);
 
-  // --- FORCE EMULATOR DEFAULT CONTROLS ---
-  useEffect(() => {
-    window.EJS_defaultControls = {
-      0: { 
-        up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD",
-        a: "KeyE", b: "KeyQ", l: "KeyZ", r: "KeyX",
-        select: "ShiftLeft", start: "Enter"
-      }
-    };
-  }, []);
-
-  // --- WASM-BYPASS MACRO ENGINE (Streamlined for Auto-Fire Only) ---
+  // --- WASM-BYPASS MACRO ENGINE (Auto-Fire Only) ---
   const commands = useMemo(() => {
     const dispatchWasmKey = (type, keyCode, code, key) => {
-      const canvas = document.querySelector("canvas") || document.body;
+      const canvas = document.querySelector("canvas");
+      // Must focus the canvas or the emulator ignores the input!
+      if (canvas) canvas.focus(); 
+      
+      const target = canvas || document.body;
       const event = new KeyboardEvent(type, { key, code, bubbles: true, cancelable: true, composed: true });
       
       Object.defineProperty(event, 'keyCode', { get: () => keyCode });
       Object.defineProperty(event, 'which', { get: () => keyCode });
       
-      canvas.dispatchEvent(event);
+      target.dispatchEvent(event);
       window.dispatchEvent(event);
     };
 
     const triggerClick = (keyCode, code, key) => {
       dispatchWasmKey("keydown", keyCode, code, key);
-      setTimeout(() => dispatchWasmKey("keyup", keyCode, code, key), 100); 
+      setTimeout(() => dispatchWasmKey("keyup", keyCode, code, key), 80); 
     };
 
     return {
