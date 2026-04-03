@@ -44,50 +44,76 @@ export default function PlayPage() {
   const romRef = useRef(null);
   const autoFireInterval = useRef(null);
 
-  // --- AGGRESSIVE MACRO COMMANDS ---
+  // --- FORCE EMULATOR DEFAULT CONTROLS ---
+  useEffect(() => {
+    window.EJS_defaultControls = {
+      0: { 
+        up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD",
+        a: "KeyE", b: "KeyQ", l: "KeyZ", r: "KeyX",
+        select: "ShiftLeft", start: "Enter"
+      }
+    };
+  }, []);
+
+  // --- WASM-BYPASS MACRO ENGINE ---
   const commands = useMemo(() => {
-    // Highly specific WASM-compatible ghost key press
-    const triggerKey = (code) => {
-      const payload = { code: code, key: code, bubbles: true, composed: true, cancelable: true };
-      const eventDown = new KeyboardEvent("keydown", payload);
-      const eventUp = new KeyboardEvent("keyup", payload);
+    
+    // This hack forces the browser to send raw keyCodes that WebAssembly/SDL cannot ignore
+    const dispatchWasmKey = (type, keyCode, code, key) => {
+      const canvas = document.querySelector("canvas") || document.body;
+      const event = new KeyboardEvent(type, { key, code, bubbles: true, cancelable: true, composed: true });
       
-      window.dispatchEvent(eventDown);
-      document.dispatchEvent(eventDown);
+      // Force read-only properties to trick the emulator into thinking a physical human pressed the key
+      Object.defineProperty(event, 'keyCode', { get: () => keyCode });
+      Object.defineProperty(event, 'which', { get: () => keyCode });
       
-      setTimeout(() => {
-        window.dispatchEvent(eventUp);
-        document.dispatchEvent(eventUp);
-      }, 50);
+      canvas.dispatchEvent(event);
+      window.dispatchEvent(event);
+    };
+
+    const triggerClick = (keyCode, code, key) => {
+      dispatchWasmKey("keydown", keyCode, code, key);
+      setTimeout(() => dispatchWasmKey("keyup", keyCode, code, key), 100); // 100ms hold ensures emulator registers it
     };
 
     return {
-      quickSave: () => triggerKey("F2"), // F2 is standard for Savestate Slot 1
-      quickLoad: () => triggerKey("F4"), // F4 is standard for Loadstate Slot 1
-      openMenu: () => triggerKey("F1"),  // F1 opens the core emulator settings
+      quickSave: () => triggerClick(113, "F2", "F2"),
+      quickLoad: () => triggerClick(115, "F4", "F4"),
+      openMenu: () => triggerClick(112, "F1", "F1"),
+      
       fastForward: () => {
-        triggerKey("Space"); 
-        setIsFastForwarding((prev) => !prev);
+        setIsFastForwarding((prev) => {
+          const newState = !prev;
+          if (newState) {
+            dispatchWasmKey("keydown", 32, "Space", " "); // HOLD the key down
+          } else {
+            dispatchWasmKey("keyup", 32, "Space", " ");   // RELEASE the key
+          }
+          return newState;
+        });
       },
+      
       autoFireToggle: () => {
         if (autoFireInterval.current) {
           clearInterval(autoFireInterval.current);
           autoFireInterval.current = null;
           setIsAutoFiring(false);
+          // Failsafe release
+          dispatchWasmKey("keyup", autoFireTarget.keyCode, autoFireTarget.code, autoFireTarget.key);
         } else {
           setIsAutoFiring(true);
           autoFireInterval.current = setInterval(() => {
-            // Fires the exact Code the user set in the settings
-            triggerKey(autoFireTarget.code); 
+            triggerClick(autoFireTarget.keyCode, autoFireTarget.code, autoFireTarget.key);
           }, 50);
         }
       }
     };
-  }, [autoFireTarget]);
+  }, [autoFireTarget]); 
 
+  // --- GLOBAL HOTKEY LISTENER ---
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
-      if (!e.isTrusted) return; // Prevent infinite loop from our own macros
+      if (!e.isTrusted) return; // Prevent infinite loops from our own ghost-presses!
       if (e.target.tagName === "INPUT" || listeningFor) return; 
 
       Object.entries(hotkeys).forEach(([action, code]) => {
@@ -102,6 +128,7 @@ export default function PlayPage() {
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [hotkeys, listeningFor, commands]);
 
+  // --- SETTINGS REMAPPING LOGIC ---
   useEffect(() => {
     if (!listeningFor) return;
 
@@ -117,7 +144,6 @@ export default function PlayPage() {
         setHotkeys(newHotkeys);
         localStorage.setItem("emu_hotkeys", JSON.stringify(newHotkeys));
       }
-      
       setListeningFor(null);
     };
 
@@ -165,53 +191,55 @@ export default function PlayPage() {
       <div className="flex items-center justify-between bg-[#16161A] border border-white/5 rounded-xl p-4 mb-4">
         <div className="flex items-center gap-3">
           <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-          <h1 className="font-black text-white uppercase tracking-widest">{gameTitle}</h1>
-          <span className="text-xs bg-gray-800 text-emerald-400 px-2 py-1 rounded font-mono font-bold">{coreType.toUpperCase()}</span>
+          <h1 className="font-black text-white uppercase tracking-widest truncate max-w-[200px] sm:max-w-md">{gameTitle}</h1>
+          <span className="hidden sm:inline text-xs bg-gray-800 text-emerald-400 px-2 py-1 rounded font-mono font-bold">{coreType.toUpperCase()}</span>
         </div>
         <button onClick={() => setShowSettings(true)} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white">
           <Settings className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="bg-black border border-[#27272A] rounded-xl overflow-hidden mb-4 shadow-2xl relative">
+      <div className="bg-black border border-[#27272A] rounded-xl overflow-hidden mb-4 shadow-2xl relative flex justify-center">
+        {/* The Emulator Component itself */}
         <Emulator key={emuKey} romFile={romFile} biosFile={biosFile} />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-        <button onClick={commands.quickSave} className="flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-3 rounded-xl transition-colors group">
-          <Save className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Save State</span>
-          <span className="text-[9px] font-mono text-gray-600">[{hotkeys.quickSave}]</span>
+      {/* Mobile-Friendly Grid: Expands beautifully on small screens */}
+      <div className="flex flex-wrap sm:grid sm:grid-cols-3 md:grid-cols-5 gap-2">
+        <button onClick={commands.quickSave} className="flex-1 min-w-[30%] flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-4 sm:p-3 rounded-xl transition-colors group">
+          <Save className="w-6 h-6 sm:w-5 sm:h-5 text-blue-400 group-hover:scale-110 transition-transform" />
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Save</span>
+          <span className="hidden sm:block text-[9px] font-mono text-gray-600">[{hotkeys.quickSave}]</span>
         </button>
 
-        <button onClick={commands.quickLoad} className="flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-3 rounded-xl transition-colors group">
-          <Download className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Load State</span>
-          <span className="text-[9px] font-mono text-gray-600">[{hotkeys.quickLoad}]</span>
+        <button onClick={commands.quickLoad} className="flex-1 min-w-[30%] flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-4 sm:p-3 rounded-xl transition-colors group">
+          <Download className="w-6 h-6 sm:w-5 sm:h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Load</span>
+          <span className="hidden sm:block text-[9px] font-mono text-gray-600">[{hotkeys.quickLoad}]</span>
         </button>
 
-        <button onClick={commands.fastForward} className={`flex flex-col items-center justify-center gap-1 border p-3 rounded-xl transition-all group ${isFastForwarding ? "bg-yellow-500/20 border-yellow-500/50" : "bg-[#16161A] hover:bg-white/5 border-white/5"}`}>
-          <FastForward className={`w-5 h-5 ${isFastForwarding ? "text-yellow-400 animate-pulse" : "text-yellow-500 group-hover:scale-110 transition-transform"}`} />
+        <button onClick={commands.fastForward} className={`flex-1 min-w-[30%] flex flex-col items-center justify-center gap-1 border p-4 sm:p-3 rounded-xl transition-all group ${isFastForwarding ? "bg-yellow-500/20 border-yellow-500/50" : "bg-[#16161A] hover:bg-white/5 border-white/5"}`}>
+          <FastForward className={`w-6 h-6 sm:w-5 sm:h-5 ${isFastForwarding ? "text-yellow-400 animate-pulse" : "text-yellow-500 group-hover:scale-110 transition-transform"}`} />
           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Speed</span>
-          <span className="text-[9px] font-mono text-gray-600">[{hotkeys.fastForward}]</span>
+          <span className="hidden sm:block text-[9px] font-mono text-gray-600">[{hotkeys.fastForward}]</span>
         </button>
 
-        <button onClick={commands.autoFireToggle} className={`flex flex-col items-center justify-center gap-1 border p-3 rounded-xl transition-all group ${isAutoFiring ? "bg-red-500/20 border-red-500/50" : "bg-[#16161A] hover:bg-white/5 border-white/5"}`}>
-          <Play className={`w-5 h-5 ${isAutoFiring ? "text-red-400 animate-pulse" : "text-red-500 group-hover:scale-110 transition-transform"}`} />
+        <button onClick={commands.autoFireToggle} className={`flex-1 min-w-[45%] sm:min-w-0 flex flex-col items-center justify-center gap-1 border p-4 sm:p-3 rounded-xl transition-all group ${isAutoFiring ? "bg-red-500/20 border-red-500/50" : "bg-[#16161A] hover:bg-white/5 border-white/5"}`}>
+          <Play className={`w-6 h-6 sm:w-5 sm:h-5 ${isAutoFiring ? "text-red-400 animate-pulse" : "text-red-500 group-hover:scale-110 transition-transform"}`} />
           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Auto-Fire</span>
-          <span className="text-[9px] font-mono text-gray-600">[{hotkeys.autoFireToggle}]</span>
+          <span className="hidden sm:block text-[9px] font-mono text-gray-600">[{hotkeys.autoFireToggle}]</span>
         </button>
 
-        <button onClick={commands.openMenu} className="flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-3 rounded-xl transition-colors group col-span-2 md:col-span-1">
-          <Menu className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" />
+        <button onClick={commands.openMenu} className="flex-1 min-w-[45%] sm:min-w-0 flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-4 sm:p-3 rounded-xl transition-colors group">
+          <Menu className="w-6 h-6 sm:w-5 sm:h-5 text-purple-400 group-hover:scale-110 transition-transform" />
           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Emu Menu</span>
-          <span className="text-[9px] font-mono text-gray-600">Config & Saves</span>
+          <span className="hidden sm:block text-[9px] font-mono text-gray-600">Saves / Cheats</span>
         </button>
       </div>
 
       {showSettings && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-          <div className="bg-[#16161A] border border-white/10 w-full max-w-md rounded-3xl p-6 shadow-2xl">
+          <div className="bg-[#16161A] border border-white/10 w-full max-w-md rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-black text-white uppercase tracking-widest">HUD Settings</h2>
               <button onClick={() => { setShowSettings(false); setListeningFor(null); }} className="p-2 bg-white/5 rounded-full hover:bg-white/10"><X className="w-5 h-5 text-gray-400" /></button>
@@ -234,7 +262,7 @@ export default function PlayPage() {
             </div>
 
             <div className="space-y-2 mb-6">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2 mb-3">Target Button</h3>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2 mb-3">Auto-Fire Target Button</h3>
               <p className="text-[10px] text-gray-500 italic mb-2">This is the key Auto-Fire will mash. Currently defaults to 'E' (your 'A' button).</p>
               
               <div className="flex items-center justify-between bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
