@@ -11,6 +11,7 @@ const DEFAULT_HOTKEYS = {
   autoFireToggle: "KeyP" 
 };
 
+// Auto-fire defaults to 'E' (Since you want E to be your 'A' button)
 const DEFAULT_AUTOFIRE_TARGET = { key: "e", code: "KeyE", keyCode: 69 };
 
 export default function PlayPage() {
@@ -43,17 +44,6 @@ export default function PlayPage() {
   
   const romRef = useRef(null);
   const autoFireInterval = useRef(null);
-
-  // --- FORCE EMULATOR DEFAULT CONTROLS ---
-  useEffect(() => {
-    window.EJS_defaultControls = {
-      0: { 
-        up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD",
-        a: "KeyE", b: "KeyQ", l: "KeyZ", r: "KeyX",
-        select: "ShiftLeft", start: "Enter"
-      }
-    };
-  }, []);
 
   // --- WASM-BYPASS MACRO ENGINE ---
   const commands = useMemo(() => {
@@ -200,11 +190,10 @@ export default function PlayPage() {
       </div>
 
       <div className="bg-black border border-[#27272A] rounded-xl overflow-hidden mb-4 shadow-2xl relative flex justify-center">
-        {/* The Emulator Component itself */}
         <Emulator key={emuKey} romFile={romFile} biosFile={biosFile} />
       </div>
 
-      {/* Mobile-Friendly Grid: Expands beautifully on small screens */}
+      {/* Mobile-Friendly Grid */}
       <div className="flex flex-wrap sm:grid sm:grid-cols-3 md:grid-cols-5 gap-2">
         <button onClick={commands.quickSave} className="flex-1 min-w-[30%] flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-4 sm:p-3 rounded-xl transition-colors group">
           <Save className="w-6 h-6 sm:w-5 sm:h-5 text-blue-400 group-hover:scale-110 transition-transform" />
