@@ -1,13 +1,11 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, Gamepad2, FileUp, Save, Download, FastForward, Play, Settings, X, Menu } from "lucide-react";
+import { Upload, Gamepad2, FileUp, Play, Settings, X } from "lucide-react";
 import Emulator from "./Emulator";
 import { useEmu } from "../App";
 
+// Only keeping the Auto-Fire toggle hotkey
 const DEFAULT_HOTKEYS = {
-  quickSave: "F1",
-  quickLoad: "F2",
-  fastForward: "Space",
   autoFireToggle: "KeyP" 
 };
 
@@ -39,85 +37,52 @@ export default function PlayPage() {
   
   const [showSettings, setShowSettings] = useState(false);
   const [listeningFor, setListeningFor] = useState(null); 
-  const [isFastForwarding, setIsFastForwarding] = useState(false);
   const [isAutoFiring, setIsAutoFiring] = useState(false);
   
   const romRef = useRef(null);
   const autoFireInterval = useRef(null);
 
-  // --- THE ULTIMATE WASM-BYPASS ENGINE ---
+  // --- FORCE EMULATOR DEFAULT CONTROLS ---
+  useEffect(() => {
+    window.EJS_defaultControls = {
+      0: { 
+        up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD",
+        a: "KeyE", b: "KeyQ", l: "KeyZ", r: "KeyX",
+        select: "ShiftLeft", start: "Enter"
+      }
+    };
+  }, []);
+
+  // --- WASM-BYPASS MACRO ENGINE (Streamlined for Auto-Fire Only) ---
   const commands = useMemo(() => {
-    
-    // Fires a master-key event that hits every possible layer of the emulator
-    const fireEvent = (type, keyCode, code) => {
-      const canvas = document.querySelector("canvas");
+    const dispatchWasmKey = (type, keyCode, code, key) => {
+      const canvas = document.querySelector("canvas") || document.body;
+      const event = new KeyboardEvent(type, { key, code, bubbles: true, cancelable: true, composed: true });
       
-      // CRITICAL: Emulator ignores input if the canvas isn't actively focused!
-      if (canvas) canvas.focus(); 
-
-      const event = new KeyboardEvent(type, {
-        bubbles: true,
-        cancelable: true,
-        composed: true,
-        code: code,
-        key: code === "Space" ? " " : String.fromCharCode(keyCode),
-      });
-
-      // Force read-only properties for strict SDL2 engines
       Object.defineProperty(event, 'keyCode', { get: () => keyCode });
       Object.defineProperty(event, 'which', { get: () => keyCode });
-
-      // 1. Dispatch to main window
+      
+      canvas.dispatchEvent(event);
       window.dispatchEvent(event);
-      document.dispatchEvent(event);
-      if (canvas) canvas.dispatchEvent(event);
-
-      // 2. Dispatch to hidden iframes (EmulatorJS sometimes isolates the DOM)
-      const iframes = document.querySelectorAll('iframe');
-      iframes.forEach(iframe => {
-        try {
-          if (iframe.contentWindow) iframe.contentWindow.dispatchEvent(event);
-          if (iframe.contentDocument) iframe.contentDocument.dispatchEvent(event);
-        } catch (e) {
-          // Ignore cross-origin errors
-        }
-      });
     };
 
-    const triggerClick = (keyCode, code) => {
-      fireEvent("keydown", keyCode, code);
-      setTimeout(() => fireEvent("keyup", keyCode, code), 100); // 100ms ensures the emulator registers it
+    const triggerClick = (keyCode, code, key) => {
+      dispatchWasmKey("keydown", keyCode, code, key);
+      setTimeout(() => dispatchWasmKey("keyup", keyCode, code, key), 100); 
     };
 
     return {
-      quickSave: () => triggerClick(113, "F2"),
-      quickLoad: () => triggerClick(115, "F4"),
-      openMenu: () => triggerClick(112, "F1"),
-      
-      fastForward: () => {
-        setIsFastForwarding((prev) => {
-          const newState = !prev;
-          if (newState) {
-            fireEvent("keydown", 32, "Space"); // HOLD down
-          } else {
-            fireEvent("keyup", 32, "Space");   // RELEASE
-          }
-          return newState;
-        });
-      },
-      
       autoFireToggle: () => {
         if (autoFireInterval.current) {
           clearInterval(autoFireInterval.current);
           autoFireInterval.current = null;
           setIsAutoFiring(false);
-          // Failsafe release
-          fireEvent("keyup", autoFireTarget.keyCode, autoFireTarget.code);
+          dispatchWasmKey("keyup", autoFireTarget.keyCode, autoFireTarget.code, autoFireTarget.key);
         } else {
           setIsAutoFiring(true);
           autoFireInterval.current = setInterval(() => {
-            triggerClick(autoFireTarget.keyCode, autoFireTarget.code);
-          }, 50); // Mashing speed
+            triggerClick(autoFireTarget.keyCode, autoFireTarget.code, autoFireTarget.key);
+          }, 50);
         }
       }
     };
@@ -126,7 +91,6 @@ export default function PlayPage() {
   // --- GLOBAL HOTKEY LISTENER ---
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
-      // ONLY respond to real, physical keyboard presses. Ignore our ghost macros!
       if (!e.isTrusted) return; 
       if (e.target.tagName === "INPUT" || listeningFor) return; 
 
@@ -202,6 +166,7 @@ export default function PlayPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-2">
       
+      {/* Top Bar */}
       <div className="flex items-center justify-between bg-[#16161A] border border-white/5 rounded-xl p-4 mb-4">
         <div className="flex items-center gap-3">
           <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
@@ -213,41 +178,23 @@ export default function PlayPage() {
         </button>
       </div>
 
-      <div className="bg-black border border-[#27272A] rounded-xl overflow-hidden mb-4 shadow-2xl relative flex justify-center">
-        <Emulator key={emuKey} romFile={romFile} biosFile={biosFile} />
-      </div>
+      {/* Main Content: Emulator & Sidebar */}
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
+        
+        {/* Emulator Canvas */}
+        <div className="flex-1 bg-black border border-[#27272A] rounded-xl overflow-hidden shadow-2xl relative flex justify-center min-h-[300px]">
+          <Emulator key={emuKey} romFile={romFile} biosFile={biosFile} />
+        </div>
 
-      {/* Mobile-Friendly Grid */}
-      <div className="flex flex-wrap sm:grid sm:grid-cols-3 md:grid-cols-5 gap-2">
-        <button onClick={commands.quickSave} className="flex-1 min-w-[30%] flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-4 sm:p-3 rounded-xl transition-colors group">
-          <Save className="w-6 h-6 sm:w-5 sm:h-5 text-blue-400 group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Save</span>
-          <span className="hidden sm:block text-[9px] font-mono text-gray-600">[{hotkeys.quickSave}]</span>
-        </button>
+        {/* Side Panel Controls */}
+        <div className="flex flex-row md:flex-col gap-2 shrink-0 md:w-32">
+          <button onClick={commands.autoFireToggle} className={`flex-1 flex flex-col items-center justify-center gap-2 border p-4 sm:p-6 rounded-xl transition-all group ${isAutoFiring ? "bg-red-500/20 border-red-500/50" : "bg-[#16161A] hover:bg-white/5 border-white/5"}`}>
+            <Play className={`w-8 h-8 ${isAutoFiring ? "text-red-400 animate-pulse" : "text-red-500 group-hover:scale-110 transition-transform"}`} />
+            <span className="text-sm font-bold text-gray-300 uppercase tracking-wider">Auto-Fire</span>
+            <span className="text-[10px] font-mono text-gray-500">[{hotkeys.autoFireToggle}]</span>
+          </button>
+        </div>
 
-        <button onClick={commands.quickLoad} className="flex-1 min-w-[30%] flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-4 sm:p-3 rounded-xl transition-colors group">
-          <Download className="w-6 h-6 sm:w-5 sm:h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Load</span>
-          <span className="hidden sm:block text-[9px] font-mono text-gray-600">[{hotkeys.quickLoad}]</span>
-        </button>
-
-        <button onClick={commands.fastForward} className={`flex-1 min-w-[30%] flex flex-col items-center justify-center gap-1 border p-4 sm:p-3 rounded-xl transition-all group ${isFastForwarding ? "bg-yellow-500/20 border-yellow-500/50" : "bg-[#16161A] hover:bg-white/5 border-white/5"}`}>
-          <FastForward className={`w-6 h-6 sm:w-5 sm:h-5 ${isFastForwarding ? "text-yellow-400 animate-pulse" : "text-yellow-500 group-hover:scale-110 transition-transform"}`} />
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Speed</span>
-          <span className="hidden sm:block text-[9px] font-mono text-gray-600">[{hotkeys.fastForward}]</span>
-        </button>
-
-        <button onClick={commands.autoFireToggle} className={`flex-1 min-w-[45%] sm:min-w-0 flex flex-col items-center justify-center gap-1 border p-4 sm:p-3 rounded-xl transition-all group ${isAutoFiring ? "bg-red-500/20 border-red-500/50" : "bg-[#16161A] hover:bg-white/5 border-white/5"}`}>
-          <Play className={`w-6 h-6 sm:w-5 sm:h-5 ${isAutoFiring ? "text-red-400 animate-pulse" : "text-red-500 group-hover:scale-110 transition-transform"}`} />
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Auto-Fire</span>
-          <span className="hidden sm:block text-[9px] font-mono text-gray-600">[{hotkeys.autoFireToggle}]</span>
-        </button>
-
-        <button onClick={commands.openMenu} className="flex-1 min-w-[45%] sm:min-w-0 flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-4 sm:p-3 rounded-xl transition-colors group">
-          <Menu className="w-6 h-6 sm:w-5 sm:h-5 text-purple-400 group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Emu Menu</span>
-          <span className="hidden sm:block text-[9px] font-mono text-gray-600">Config & Cheats</span>
-        </button>
       </div>
 
       {/* Settings Modal */}
@@ -260,7 +207,7 @@ export default function PlayPage() {
             </div>
 
             <div className="space-y-2 mb-6">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2 mb-3">HUD Triggers</h3>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2 mb-3">Auto-Fire Trigger</h3>
               
               {Object.keys(DEFAULT_HOTKEYS).map((action) => (
                 <div key={action} className="flex items-center justify-between bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
@@ -276,7 +223,7 @@ export default function PlayPage() {
             </div>
 
             <div className="space-y-2 mb-6">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2 mb-3">Auto-Fire Target Button</h3>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2 mb-3">Target Button</h3>
               <p className="text-[10px] text-gray-500 italic mb-2">This is the key Auto-Fire will mash. Currently defaults to 'E' (your 'A' button).</p>
               
               <div className="flex items-center justify-between bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
