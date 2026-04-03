@@ -1,0 +1,14 @@
+[build]
+  # This tells Netlify what command to run. 
+  # Setting CI=false stops the "treating warnings as errors" crash!
+  command = "CI=false yarn build"
+  
+  # This tells Netlify where your finished site lives
+  publish = "build"
+
+[[redirects]]
+  # This is CRITICAL for React Router. It ensures that if a user goes directly
+  # to yoursite.com/pokedex, Netlify doesn't throw a 404 error.
+  from = "/*"
+  to = "/index.html"
+  status = 200
