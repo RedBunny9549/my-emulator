@@ -11,7 +11,7 @@ const DEFAULT_HOTKEYS = {
   autoFireToggle: "KeyP" 
 };
 
-// Auto-fire defaults to 'E' (Since you want E to be your 'A' button)
+// Auto-fire defaults to 'E' (Your 'A' button)
 const DEFAULT_AUTOFIRE_TARGET = { key: "e", code: "KeyE", keyCode: 69 };
 
 export default function PlayPage() {
@@ -45,39 +45,62 @@ export default function PlayPage() {
   const romRef = useRef(null);
   const autoFireInterval = useRef(null);
 
-  // --- WASM-BYPASS MACRO ENGINE ---
+  // --- THE ULTIMATE WASM-BYPASS ENGINE ---
   const commands = useMemo(() => {
     
-    // This hack forces the browser to send raw keyCodes that WebAssembly/SDL cannot ignore
-    const dispatchWasmKey = (type, keyCode, code, key) => {
-      const canvas = document.querySelector("canvas") || document.body;
-      const event = new KeyboardEvent(type, { key, code, bubbles: true, cancelable: true, composed: true });
+    // Fires a master-key event that hits every possible layer of the emulator
+    const fireEvent = (type, keyCode, code) => {
+      const canvas = document.querySelector("canvas");
       
-      // Force read-only properties to trick the emulator into thinking a physical human pressed the key
+      // CRITICAL: Emulator ignores input if the canvas isn't actively focused!
+      if (canvas) canvas.focus(); 
+
+      const event = new KeyboardEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        code: code,
+        key: code === "Space" ? " " : String.fromCharCode(keyCode),
+      });
+
+      // Force read-only properties for strict SDL2 engines
       Object.defineProperty(event, 'keyCode', { get: () => keyCode });
       Object.defineProperty(event, 'which', { get: () => keyCode });
-      
-      canvas.dispatchEvent(event);
+
+      // 1. Dispatch to main window
       window.dispatchEvent(event);
+      document.dispatchEvent(event);
+      if (canvas) canvas.dispatchEvent(event);
+
+      // 2. Dispatch to hidden iframes (EmulatorJS sometimes isolates the DOM)
+      const iframes = document.querySelectorAll('iframe');
+      iframes.forEach(iframe => {
+        try {
+          if (iframe.contentWindow) iframe.contentWindow.dispatchEvent(event);
+          if (iframe.contentDocument) iframe.contentDocument.dispatchEvent(event);
+        } catch (e) {
+          // Ignore cross-origin errors
+        }
+      });
     };
 
-    const triggerClick = (keyCode, code, key) => {
-      dispatchWasmKey("keydown", keyCode, code, key);
-      setTimeout(() => dispatchWasmKey("keyup", keyCode, code, key), 100); // 100ms hold ensures emulator registers it
+    const triggerClick = (keyCode, code) => {
+      fireEvent("keydown", keyCode, code);
+      setTimeout(() => fireEvent("keyup", keyCode, code), 100); // 100ms ensures the emulator registers it
     };
 
     return {
-      quickSave: () => triggerClick(113, "F2", "F2"),
-      quickLoad: () => triggerClick(115, "F4", "F4"),
-      openMenu: () => triggerClick(112, "F1", "F1"),
+      quickSave: () => triggerClick(113, "F2"),
+      quickLoad: () => triggerClick(115, "F4"),
+      openMenu: () => triggerClick(112, "F1"),
       
       fastForward: () => {
         setIsFastForwarding((prev) => {
           const newState = !prev;
           if (newState) {
-            dispatchWasmKey("keydown", 32, "Space", " "); // HOLD the key down
+            fireEvent("keydown", 32, "Space"); // HOLD down
           } else {
-            dispatchWasmKey("keyup", 32, "Space", " ");   // RELEASE the key
+            fireEvent("keyup", 32, "Space");   // RELEASE
           }
           return newState;
         });
@@ -89,12 +112,12 @@ export default function PlayPage() {
           autoFireInterval.current = null;
           setIsAutoFiring(false);
           // Failsafe release
-          dispatchWasmKey("keyup", autoFireTarget.keyCode, autoFireTarget.code, autoFireTarget.key);
+          fireEvent("keyup", autoFireTarget.keyCode, autoFireTarget.code);
         } else {
           setIsAutoFiring(true);
           autoFireInterval.current = setInterval(() => {
-            triggerClick(autoFireTarget.keyCode, autoFireTarget.code, autoFireTarget.key);
-          }, 50);
+            triggerClick(autoFireTarget.keyCode, autoFireTarget.code);
+          }, 50); // Mashing speed
         }
       }
     };
@@ -103,7 +126,8 @@ export default function PlayPage() {
   // --- GLOBAL HOTKEY LISTENER ---
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
-      if (!e.isTrusted) return; // Prevent infinite loops from our own ghost-presses!
+      // ONLY respond to real, physical keyboard presses. Ignore our ghost macros!
+      if (!e.isTrusted) return; 
       if (e.target.tagName === "INPUT" || listeningFor) return; 
 
       Object.entries(hotkeys).forEach(([action, code]) => {
@@ -222,10 +246,11 @@ export default function PlayPage() {
         <button onClick={commands.openMenu} className="flex-1 min-w-[45%] sm:min-w-0 flex flex-col items-center justify-center gap-1 bg-[#16161A] hover:bg-white/5 border border-white/5 p-4 sm:p-3 rounded-xl transition-colors group">
           <Menu className="w-6 h-6 sm:w-5 sm:h-5 text-purple-400 group-hover:scale-110 transition-transform" />
           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Emu Menu</span>
-          <span className="hidden sm:block text-[9px] font-mono text-gray-600">Saves / Cheats</span>
+          <span className="hidden sm:block text-[9px] font-mono text-gray-600">Config & Cheats</span>
         </button>
       </div>
 
+      {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-[#16161A] border border-white/10 w-full max-w-md rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
