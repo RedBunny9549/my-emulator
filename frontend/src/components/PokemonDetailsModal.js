@@ -1,134 +1,130 @@
-import React from 'react';
-import { X, Star, ShieldCheck, Zap, Info } from 'lucide-react';
-import { TYPE_COLORS, CLASS_COLORS } from '../data/theme';
-import pokemonData from '../data/pokemonData';
+import { useState, useEffect } from "react";
+import { X, Loader2, Star, Zap, Shield, ArrowRight } from "lucide-react";
+import { TYPE_COLORS, CLASS_COLORS } from "../data/theme";
 
-export default function PokemonDetailsModal({ pokemon, onClose, onJump }) {
-  
-  // Logic to suggest Competitive Meta
-  const getMetaSet = (p) => {
-    const stats = p.baseStats;
-    const isSpecial = stats.spAtk > stats.atk;
-    const isTank = (stats.hp + stats.def + stats.spDef) > 250;
-    
+export default function PokemonDetailsModal({ id, onClose, onJump }) {
+  const [data, setData] = useState(null);
+  const [species, setSpecies] = useState(null);
+  const [evoChain, setEvoChain] = useState([]);
+  const [activeTab, setActiveTab] = useState("info");
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(r => r.json()),
+      fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`).then(r => r.json())
+    ]).then(([p, s]) => {
+      setData(p);
+      setSpecies(s);
+      fetch(s.evolution_chain.url).then(r => r.json()).then(eco => {
+        const chain = [];
+        let curr = eco.chain;
+        while(curr) {
+            chain.push({ name: curr.species.name, id: curr.species.url.split('/').filter(Boolean).pop() });
+            curr = curr.evolves_to[0];
+        }
+        setEvoChain(chain);
+      });
+    });
+  }, [id]);
+
+  if (!data || !species) return null;
+
+  // Logic for Recommended Set
+  const getBestSet = () => {
+    const isSpecial = data.stats[3].base_stat > data.stats[1].base_stat;
     return {
-      nature: isSpecial ? (stats.speed > 90 ? "Timid" : "Modest") : (stats.speed > 90 ? "Jolly" : "Adamant"),
-      item: isTank ? "Leftovers" : (stats.speed > 110 ? "Life Orb" : "Choice Scarf"),
-      role: isTank ? "Bulky Wall" : "Fast Sweeper"
+      nature: isSpecial ? "Modest / Timid" : "Adamant / Jolly",
+      item: "Leftovers / Life Orb",
+      ability: data.abilities[0].ability.name.replace("-", " ")
     };
   };
-
-  const meta = getMetaSet(pokemon);
-
-  // Find other mons with the same ability
-  const otherUsers = (ability) => pokemonData.filter(p => p.abilities.includes(ability) && p.id !== pokemon.id);
+  const bestSet = getBestSet();
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[500] flex items-center justify-center p-4">
-      <div className="bg-[#16161A] border border-white/10 w-full max-w-5xl rounded-3xl p-6 md:p-10 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
-        <button onClick={onClose} className="fixed top-8 right-8 p-2 bg-red-500 text-white rounded-full hover:scale-110 transition-transform z-10"><X/></button>
-
-        <div className="grid lg:grid-cols-12 gap-10">
-          {/* Column 1: Info & Evo */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="text-center bg-black/20 p-6 rounded-3xl border border-white/5">
-               <img src={`/sprites/pokemon/${pokemon.id}.png`} className="w-48 h-48 mx-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
-               <h2 className="text-4xl font-black text-white uppercase italic">{pokemon.name}</h2>
-            </div>
-
-            <div className="bg-white/5 p-4 rounded-2xl">
-              <h4 className="text-gray-500 font-bold text-xs uppercase mb-3 flex items-center gap-2"><Zap size={14}/> Evolution Chain</h4>
-              <div className="flex flex-wrap items-center gap-2">
-                {pokemon.evoChain.map((name, i) => (
-                  <React.Fragment key={name}>
-                    <button 
-                      onClick={() => onJump(name)}
-                      className={`px-3 py-1 rounded-lg text-sm font-bold transition-all ${name.toLowerCase() === pokemon.name.toLowerCase() ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
-                    >
-                      {name}
-                    </button>
-                    {i < pokemon.evoChain.length - 1 && <span className="text-gray-700">→</span>}
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="text-gray-500 font-bold text-xs uppercase flex items-center gap-2"><Info size={14}/> Abilities (Click to see others)</h4>
-              {pokemon.abilities.map(a => (
-                <div key={a} className="group relative">
-                  <div className="p-3 bg-white/5 border border-white/5 rounded-xl text-white text-sm font-bold">
-                    {a}
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {otherUsers(a).slice(0, 4).map(u => (
-                        <button key={u.id} onClick={() => onJump(u.name)} className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded hover:bg-emerald-500/30">
-                          {u.name}
-                        </button>
-                      ))}
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-[#16161A] border border-white/10 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+        
+        {/* Header */}
+        <div className="p-6 border-b border-white/5 flex justify-between items-center">
+            <div className="flex gap-4 items-center">
+                <img src={data.sprites.front_default} className="w-16 h-16 pixelated bg-black/20 rounded-full" />
+                <div>
+                    <h2 className="text-2xl font-black text-white capitalize">{data.name.replace("-"," ")}</h2>
+                    <div className="flex gap-2 mt-1">
+                        {data.types.map(t => (
+                            <span key={t.type.name} style={{ backgroundColor: TYPE_COLORS[t.type.name] }} className="px-2 py-0.5 rounded text-[10px] font-bold uppercase text-white">
+                                {t.type.name}
+                            </span>
+                        ))}
                     </div>
-                  </div>
                 </div>
-              ))}
             </div>
-          </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full"><X className="text-gray-500" /></button>
+        </div>
 
-          {/* Column 2: Stats & Strategy */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="grid md:grid-cols-2 gap-4">
-               <div className="bg-emerald-500/5 border border-emerald-500/20 p-5 rounded-3xl">
-                  <h4 className="text-emerald-400 font-black text-sm uppercase mb-4 flex items-center gap-2"><Star size={18}/> Recommended Build</h4>
-                  <div className="space-y-2 text-sm">
-                    <p className="flex justify-between"><span className="text-gray-500 font-medium">Nature</span> <span className="text-white font-bold">{meta.nature}</span></p>
-                    <p className="flex justify-between"><span className="text-gray-500 font-medium">Held Item</span> <span className="text-white font-bold">{meta.item}</span></p>
-                    <p className="flex justify-between"><span className="text-gray-500 font-medium">Role</span> <span className="text-white font-bold">{meta.role}</span></p>
-                  </div>
-               </div>
-               
-               <div className="bg-white/5 p-5 rounded-3xl border border-white/5">
-                  <h4 className="text-gray-400 font-black text-sm uppercase mb-4 flex items-center gap-2"><ShieldCheck size={18}/> Base Stats</h4>
-                  {Object.entries(pokemon.baseStats).map(([stat, val]) => (
-                    <div key={stat} className="flex items-center gap-3 mb-1 text-[11px] uppercase font-bold text-gray-400">
-                      <span className="w-12">{stat}</span>
-                      <div className="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-emerald-500 h-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{width: `${(val/255)*100}%`}}></div>
-                      </div>
-                      <span className="w-8 text-right text-white">{val}</span>
+        <div className="flex border-b border-white/5">
+            {['info', 'moves', 'strategy'].map(t => (
+                <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest ${activeTab === t ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-gray-500'}`}>
+                    {t}
+                </button>
+            ))}
+        </div>
+
+        <div className="p-6 overflow-y-auto custom-scrollbar">
+          {activeTab === 'info' && (
+            <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                    {data.stats.map(s => (
+                        <div key={s.stat.name}>
+                            <div className="flex justify-between text-[10px] uppercase font-bold text-gray-500 mb-1">
+                                <span>{s.stat.name.replace("special-", "sp")}</span>
+                                <span className="text-white">{s.base_stat}</span>
+                            </div>
+                            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500" style={{ width: `${(s.base_stat/255)*100}%` }} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div>
+                    <h3 className="text-[10px] font-bold text-gray-500 uppercase mb-3">Evolution Chain (Click to jump)</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {evoChain.map((evo, i) => (
+                            <div key={evo.id} className="flex items-center gap-2">
+                                <button onClick={() => onJump(evo.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize border ${evo.id == id ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-white/5 border-white/5 text-gray-400'}`}>
+                                    {evo.name}
+                                </button>
+                                {i < evoChain.length - 1 && <ArrowRight size={14} className="text-gray-700" />}
+                            </div>
+                        ))}
                     </div>
-                  ))}
-               </div>
+                </div>
             </div>
+          )}
 
-            <div className="bg-black/30 rounded-3xl overflow-hidden border border-white/5">
-              <table className="w-full text-left">
-                <thead className="bg-white/5 text-[10px] font-black text-gray-500 uppercase">
-                  <tr>
-                    <th className="px-4 py-3">Move</th>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Category</th>
-                    <th className="px-4 py-3 text-right">Power</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {pokemon.moves.map(m => (
-                    <tr key={m.name} className="hover:bg-white/5 transition-colors">
-                      <td className="px-4 py-3 text-white font-bold text-sm">{m.name}</td>
-                      <td className="px-4 py-3">
-                        <span style={{backgroundColor: TYPE_COLORS[m.type.toLowerCase()]}} className="text-[10px] px-2 py-0.5 rounded text-white font-bold uppercase">
-                          {m.type}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                         <span style={{backgroundColor: CLASS_COLORS[m.category]}} className="text-[10px] px-2 py-0.5 rounded text-white font-bold uppercase">
-                          {m.category}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-400 font-mono text-sm">{m.power || '--'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {activeTab === 'strategy' && (
+            <div className="space-y-4">
+                <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl">
+                    <h4 className="flex items-center gap-2 text-emerald-400 font-bold mb-3"><Star size={16}/> Pro Build</h4>
+                    <div className="space-y-2 text-sm text-gray-300">
+                        <p><span className="text-gray-500">Nature:</span> {bestSet.nature}</p>
+                        <p><span className="text-gray-500">Held Item:</span> {bestSet.item}</p>
+                        <p><span className="text-gray-500">Key Ability:</span> {bestSet.ability}</p>
+                    </div>
+                </div>
             </div>
-          </div>
+          )}
+
+          {activeTab === 'moves' && (
+            <div className="space-y-2">
+                {data.moves.slice(0, 20).map(m => (
+                    <div key={m.move.name} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                        <span className="text-white font-bold capitalize text-sm">{m.move.name.replace("-"," ")}</span>
+                        <span className="text-[10px] text-gray-500 font-bold uppercase">Level {m.version_group_details[0].level_learned_at || '—'}</span>
+                    </div>
+                ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
