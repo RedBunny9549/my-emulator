@@ -1,13 +1,13 @@
 export const TYPE_COLORS = {
-  fire: '#F08030', water: '#6890F0', grass: '#7AC74C', electric: '#F8D030',
-  ice: '#98D8D8', fighting: '#C03028', poison: '#A040B0', ground: '#E0C068',
-  flying: '#A890F0', psychic: '#F85888', bug: '#A8B820', rock: '#B8A038',
-  ghost: '#705898', dragon: '#7038F8', steel: '#B8B8D0', fairy: '#EE99AC',
-  normal: '#A8A878', dark: '#705848'
+  normal: '#A8A878', fire: '#F08030', water: '#6890F0', electric: '#F8D030',
+  grass: '#7AC74C', ice: '#96D9D6', fighting: '#C22E28', poison: '#A33EA1',
+  ground: '#E2BF65', flying: '#A98FF3', psychic: '#F95587', bug: '#A6B91A',
+  rock: '#B6A136', ghost: '#735797', dragon: '#6F35FC', dark: '#705746',
+  steel: '#B7B7CE', fairy: '#D685AD'
 };
 
 export const CLASS_COLORS = {
-  Physical: '#C92112',
-  Special: '#4F5870',
-  Status: '#8C888C'
+  physical: '#C92112',
+  special: '#4F5870',
+  status: '#8C888C'
 };
