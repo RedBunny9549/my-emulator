@@ -5,9 +5,3 @@ export const TYPE_COLORS = {
   rock: '#B6A136', ghost: '#735797', dragon: '#6F35FC', dark: '#705746',
   steel: '#B7B7CE', fairy: '#D685AD'
 };
-
-export const CLASS_COLORS = {
-  physical: '#C92112',
-  special: '#4F5870',
-  status: '#8C888C'
-};
