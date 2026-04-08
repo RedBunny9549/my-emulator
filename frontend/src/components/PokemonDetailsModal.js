@@ -1,41 +1,31 @@
 import { useState, useEffect } from "react";
 import { X, Loader2, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
-import { api } from "../lib/pokemonClient"; // Ensure this file exports a 'new PokemonClient()'
 import { TYPE_COLORS } from "../data/theme";
 
+// Standard Fetch Move Row - No library dependency
 function MoveRow({ moveName }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const toggle = async () => {
-    if (open) {
-      setOpen(false);
-      return;
-    }
-
+    if (open) { setOpen(false); return; }
     if (!data) {
       setLoading(true);
       try {
-        // FIXED: Using the correct pokenode-ts method name
-        const res = await api.move.getByName(moveName); 
+        const res = await fetch(`https://pokeapi.co/api/v2/move/${moveName}`).then(r => r.json());
         setData({
           type: res.type.name,
           power: res.power || "—",
           pp: res.pp || "—",
           accuracy: res.accuracy || "—",
           category: res.damage_class.name,
-          effect: res.effect_entries?.find(e => e.language.name === "en")?.short_effect.replace("$effect_chance", res.effect_chance) || "No description."
+          effect: res.effect_entries?.find(e => e.language.name === "en")?.short_effect.replace("$effect_chance", res.effect_chance) || "No description available."
         });
         setOpen(true);
-      } catch (err) {
-        console.error("Move Error:", err);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setOpen(true);
-    }
+      } catch (err) { console.error("Move Error:", err); }
+      setLoading(false);
+    } else { setOpen(true); }
   };
 
   return (
@@ -83,13 +73,13 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
   useEffect(() => {
     async function load() {
       try {
-        const p = await api.pokemon.getByName(id);
-        const s = await api.pokemon.getPokemonSpeciesByName(id);
+        // FIXED: Using direct fetch for the main data to prevent 'getByName' errors
+        const p = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(r => r.json());
+        const s = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`).then(r => r.json());
         setPokemon(p);
 
         const evoId = s.evolution_chain.url.split("/").filter(Boolean).pop();
-        const res = await fetch(`https://pokeapi.co/api/v2/evolution-chain/${evoId}`);
-        const eco = await res.json();
+        const eco = await fetch(`https://pokeapi.co/api/v2/evolution-chain/${evoId}`).then(r => r.json());
         
         const chain = [];
         let curr = eco.chain;
@@ -103,7 +93,7 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
           curr = curr.evolves_to[0];
         }
         setEvoChain(chain);
-      } catch (e) { console.error("Load error:", e); }
+      } catch (e) { console.error("Critical Load Error:", e); }
     }
     load();
   }, [id]);
@@ -112,12 +102,13 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
 
   const bst = pokemon.stats.reduce((total, s) => total + s.base_stat, 0);
   const normalImg = pokemon.sprites.other["official-artwork"].front_default;
-  const shinyImg = pokemon.sprites.other["official-artwork"].front_shiny || pokemon.sprites.front_shiny;
+  const shinyImg = pokemon.sprites.other["official-artwork"].front_shiny;
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-[#0f0f11] border border-white/10 rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
         
+        {/* Header */}
         <div className="p-6 border-b border-white/5 bg-white/5 relative">
             <div className="absolute top-0 right-0 w-32 h-32 blur-[80px] opacity-20" style={{ backgroundColor: TYPE_COLORS[pokemon.types[0].type.name] }}></div>
             
@@ -128,26 +119,21 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
                   onClick={() => setIsShiny(!isShiny)}
                   alt={pokemon.name} 
                 />
-                <div>
+                <div className="text-left">
                     <h2 className="text-3xl font-black text-white capitalize tracking-tighter">{pokemon.name}</h2>
                     <div className="flex gap-2 mt-2">
                         {pokemon.types.map(t => (
-                            <span key={t.type.name} style={{ backgroundColor: TYPE_COLORS[t.type.name] }} className="px-3 py-1 rounded-md text-[9px] font-black uppercase text-white shadow-lg">
+                            <span key={t.type.name} style={{ backgroundColor: TYPE_COLORS[t.type.name] }} className="px-3 py-1 rounded-md text-[9px] font-black uppercase text-white shadow-lg text-left">
                                 {t.type.name}
                             </span>
                         ))}
                     </div>
-                    <button 
-                      onClick={() => setIsShiny(!isShiny)}
-                      className={`mt-3 text-[8px] font-black px-2 py-1 rounded border transition-all ${isShiny ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-500' : 'bg-white/5 border-white/10 text-gray-500'}`}
-                    >
-                      {isShiny ? "SHINY ACTIVE" : "VIEW SHINY"}
-                    </button>
                 </div>
             </div>
             <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full text-gray-500"><X size={20}/></button>
         </div>
 
+        {/* Tabs */}
         <div className="flex bg-black/20 border-b border-white/5">
             {['info', 'moves', 'stats'].map(t => (
                 <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === t ? 'text-emerald-400 bg-emerald-500/5 border-b-2 border-emerald-400' : 'text-gray-500'}`}>
@@ -156,11 +142,12 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
             ))}
         </div>
 
+        {/* Content Area */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
           {activeTab === 'info' && (
-            <div className="space-y-8">
+            <div className="space-y-8 text-left">
                 <div>
-                    <h3 className="text-[10px] font-black text-gray-600 uppercase mb-4 tracking-widest text-left">Evolution Chain</h3>
+                    <h3 className="text-[10px] font-black text-gray-600 uppercase mb-4 tracking-widest">Evolution Chain</h3>
                     <div className="flex flex-col gap-2">
                         {evoChain.map((evo, i) => (
                             <div key={evo.id} className="flex flex-col items-center">
@@ -172,7 +159,7 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
                                     <span className="font-bold capitalize text-sm tracking-wide">{evo.name}</span>
                                     {evo.id == id && <span className="ml-auto text-[8px] bg-emerald-500 text-white px-2 py-1 rounded-full">ACTIVE</span>}
                                 </button>
-                                {i < evoChain.length - 1 && <div className="py-1"><ArrowRight size={14} className="text-gray-800 rotate-90" /></div>}
+                                {i < evoChain.length - 1 && <div className="py-1 text-center w-full flex justify-center"><ArrowRight size={14} className="text-gray-800 rotate-90" /></div>}
                             </div>
                         ))}
                     </div>
