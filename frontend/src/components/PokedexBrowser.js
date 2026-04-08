@@ -13,7 +13,6 @@ export default function PokedexBrowser() {
     async function fetchPokedex() {
       try {
         setLoading(true);
-        // Fetching up to Gen 9
         const response = await fetch("https://pokeapi.co/api/v2/pokemon?limit=1025");
         const data = await response.json();
         const formatted = data.results.map((p, index) => {
@@ -21,13 +20,12 @@ export default function PokedexBrowser() {
           return {
             name: p.name,
             id: id,
-            // School-safe jsDelivr Proxy
             image: `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/${id}.png`
           };
         });
         setPokemonList(formatted);
         setFilteredList(formatted);
-      } catch (err) { console.error("Failed to fetch:", err); }
+      } catch (err) { console.error(err); }
       setLoading(false);
     }
     fetchPokedex();
@@ -40,11 +38,7 @@ export default function PokedexBrowser() {
     setFilteredList(filtered);
   }, [searchQuery, pokemonList]);
 
-  if (loading) return (
-    <div className="h-screen flex items-center justify-center bg-[#0c0c0e]">
-      <Loader2 className="animate-spin text-emerald-500" size={40} />
-    </div>
-  );
+  if (loading) return <div className="h-screen flex items-center justify-center bg-[#0c0c0e]"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>;
 
   return (
     <div className="min-h-screen bg-[#0c0c0e] text-white p-4">
@@ -57,12 +51,11 @@ export default function PokedexBrowser() {
             placeholder="Search by name or ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 outline-none focus:border-emerald-500/50 font-bold text-sm"
+            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 outline-none focus:border-emerald-500/50 font-black text-sm transition-all"
           />
         </div>
       </div>
 
-      {/* Tighter Grid: col-3 on mobile, col-8 on large screens */}
       <div className="max-w-7xl mx-auto grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
         {filteredList.map((pokemon) => (
           <button
@@ -72,12 +65,7 @@ export default function PokedexBrowser() {
           >
             <div className="relative z-10 flex flex-col items-center">
               <div className="w-16 h-16 mb-2">
-                <img 
-                  src={pokemon.image} 
-                  alt={pokemon.name} 
-                  className="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform" 
-                  loading="lazy"
-                />
+                <img src={pokemon.image} alt={pokemon.name} className="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform" loading="lazy" />
               </div>
               <p className="text-gray-500 text-[8px] font-black uppercase w-full">#{pokemon.id}</p>
               <h3 className="text-[11px] font-black capitalize truncate w-full">{pokemon.name}</h3>
