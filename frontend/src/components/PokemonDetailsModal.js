@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Loader2, ChevronDown, ChevronUp, ArrowRight, Sword, Shield } from "lucide-react";
+import { X, Loader2, ChevronDown, ChevronUp, ArrowRight, Sword } from "lucide-react";
 import { TYPE_COLORS } from "../data/theme";
 
 // MOVES ROW
@@ -53,7 +53,7 @@ function MoveRow({ moveName }) {
   );
 }
 
-// ABILITY ROW (NEW: Shows what it does)
+// ABILITY ROW
 function AbilityRow({ abilityName, isHidden }) {
   const [effect, setEffect] = useState(null);
   const [open, setOpen] = useState(false);
@@ -75,10 +75,10 @@ function AbilityRow({ abilityName, isHidden }) {
 
   return (
     <div className="mb-2">
-      <button onClick={toggle} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 flex justify-between items-center hover:bg-white/10 transition-all text-left">
+      <button onClick={toggle} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 flex justify-between items-center hover:bg-white/10 text-left">
         <div className="flex items-center gap-2">
           <span className="text-white font-black capitalize text-xs">{abilityName.replace("-", " ")}</span>
-          {isHidden && <span className="text-[8px] text-purple-400 border border-purple-400/30 px-1.5 rounded uppercase font-black tracking-tighter">Hidden</span>}
+          {isHidden && <span className="text-[8px] text-purple-400 border border-purple-400/30 px-1.5 rounded uppercase font-black">Hidden</span>}
         </div>
         {loading ? <Loader2 size={12} className="animate-spin" /> : (open ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
       </button>
@@ -122,6 +122,8 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
   if (!pokemon) return null;
 
   const bst = pokemon.stats.reduce((total, s) => total + s.base_stat, 0);
+  const calcStat = (base, isHP) => isMaxStats ? (isHP ? Math.floor(base * 2 + 31 + 63 + 110) : Math.floor(base * 2 + 31 + 63 + 5)) : base;
+
   const normalImg = `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/${id}.png`;
   const shinyImg = `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/shiny/${id}.png`;
 
@@ -129,14 +131,14 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
     <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-[#0c0c0e] border border-white/10 rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
         
-        {/* Header with Fixed Shiny Toggle */}
+        {/* Header */}
         <div className="p-6 border-b border-white/5 bg-white/5 relative">
             <div className="absolute top-0 right-0 w-32 h-32 blur-[80px] opacity-20" style={{ backgroundColor: TYPE_COLORS[pokemon.types[0].type.name] }}></div>
-            <div className="flex gap-5 items-center relative z-10 text-left">
+            <div className="flex gap-5 items-center relative z-10 text-left font-black">
                 <div className="w-24 h-24 flex items-center justify-center bg-white/5 rounded-3xl border border-white/5 shadow-inner">
                   <img src={isShiny ? shinyImg : normalImg} className="w-20 h-20 object-contain cursor-pointer" onClick={() => setIsShiny(!isShiny)} alt={pokemon.name} />
                 </div>
-                <div className="font-black">
+                <div>
                     <h2 className="text-2xl text-white capitalize tracking-tighter leading-tight">{pokemon.name}</h2>
                     <div className="flex gap-2 mt-2">
                         {pokemon.types.map(t => (
@@ -166,11 +168,7 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
             <div className="space-y-6 text-left font-black">
                 <div>
                     <h3 className="text-[10px] text-gray-600 uppercase mb-3 tracking-widest">Abilities</h3>
-                    <div className="flex flex-col gap-1">
-                        {pokemon.abilities.map(a => (
-                            <AbilityRow key={a.ability.name} abilityName={a.ability.name} isHidden={a.is_hidden} />
-                        ))}
-                    </div>
+                    {pokemon.abilities.map(a => <AbilityRow key={a.ability.name} abilityName={a.ability.name} isHidden={a.is_hidden} />)}
                 </div>
                 <div>
                     <h3 className="text-[10px] text-gray-600 uppercase mb-4 tracking-widest">Evolution Chain</h3>
@@ -189,24 +187,60 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
             </div>
           )}
 
+          {activeTab === 'moves' && (
+            <div className="flex flex-col">
+                {pokemon.moves.slice(0, 35).map(m => <MoveRow key={m.move.name} moveName={m.move.name} />)}
+            </div>
+          )}
+
+          {activeTab === 'stats' && (
+             <div className="space-y-5 font-black">
+               <div className="flex justify-between items-center mb-2">
+                 <h3 className="text-[10px] text-gray-600 uppercase tracking-widest text-left">Stats</h3>
+                 <button onClick={() => setIsMaxStats(!isMaxStats)} className={`text-[9px] px-3 py-1 rounded-full border transition-all ${isMaxStats ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-white/5 text-gray-500 border-white/10'}`}>
+                   {isMaxStats ? "LVL 100" : "BASE STATS"}
+                 </button>
+               </div>
+               <div className="space-y-4">
+                 {pokemon.stats.map(s => {
+                   const displayVal = calcStat(s.base_stat, s.stat.name === 'hp');
+                   const barW = isMaxStats ? (displayVal / 504) * 100 : (displayVal / 255) * 100;
+                   return (
+                    <div key={s.stat.name}>
+                      <div className="flex justify-between text-[10px] uppercase text-gray-500 mb-1.5 text-left font-black">
+                        <span>{s.stat.name.replace("special-", "sp. ")}</span>
+                        <span className="text-white">{displayVal}</span>
+                      </div>
+                      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div className={`h-full transition-all duration-500 ${isMaxStats ? 'bg-blue-500' : 'bg-emerald-500'}`} style={{ width: `${barW}%` }} />
+                      </div>
+                    </div>
+                   )
+                 })}
+               </div>
+               <div className="mt-8 pt-6 border-t border-white/10 flex justify-between items-end text-left font-black">
+                 <div><p className="text-[10px] text-gray-600 uppercase tracking-widest mb-1">BST</p><p className="text-4xl text-white leading-none tracking-tighter">{bst}</p></div>
+                 <div className="bg-emerald-500/20 text-emerald-400 px-5 py-2 rounded-2xl border border-emerald-500/30 text-[10px] uppercase tracking-widest">{bst > 580 ? 'Legendary' : bst > 500 ? 'Elite' : 'Standard'}</div>
+               </div>
+             </div>
+          )}
+
           {activeTab === 'battle' && (
             <div className="space-y-4 font-black">
               <div className="relative h-64 bg-[#141416] rounded-[2.5rem] border border-white/5 flex flex-col justify-end p-8 overflow-hidden">
                 <div className="absolute top-6 right-10 flex flex-col items-center text-center">
                   <img src={isShiny ? `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/shiny/${id}.png` : `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${id}.png`} className="w-24 h-24 pixelated drop-shadow-2xl" alt="enemy" />
-                  <div className="bg-black/80 px-3 py-1 rounded-full border border-white/10 text-[9px] text-white uppercase mt-2 shadow-lg tracking-widest font-black">Enemy</div>
+                  <div className="bg-black/80 px-3 py-1 rounded-full border border-white/10 text-[9px] text-white uppercase mt-2 shadow-lg tracking-widest">Enemy</div>
                 </div>
-                <div className="flex flex-col items-start mb-0"> {/* Fixed: No bottom margin to ground the sprite */}
+                <div className="flex flex-col items-start mb-0">
                   <img src={isShiny ? `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/back/shiny/${id}.png` : `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/back/${id}.png`} 
-                       className="w-40 h-40 pixelated scale-[1.3] origin-bottom-left transition-transform -mb-6" // Grounded with negative margin
+                       className="w-44 h-44 pixelated scale-[1.3] origin-bottom-left transition-transform -mb-8"
                        alt="yours" />
-                  <div className="bg-emerald-600 px-3 py-1 rounded-full text-[9px] text-white uppercase tracking-widest shadow-xl relative z-20 font-black">Player</div>
+                  <div className="bg-emerald-600 px-3 py-1 rounded-full text-[9px] text-white uppercase tracking-widest shadow-xl relative z-20">Player</div>
                 </div>
               </div>
             </div>
           )}
-
-          {/* ... (Moves and Stats remain the same as the Master version) ... */}
         </div>
       </div>
     </div>
