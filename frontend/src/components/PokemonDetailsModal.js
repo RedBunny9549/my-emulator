@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Loader2, ChevronDown, ChevronUp, ArrowRight, Sword } from "lucide-react";
+import { X, Loader2, ChevronDown, ChevronUp, ArrowRight, Sword, Shield } from "lucide-react";
 import { api } from "../lib/pokemonClient";
 import { TYPE_COLORS } from "../data/theme";
 
@@ -14,7 +14,6 @@ function MoveRow({ moveName }) {
     if (!data) {
       setLoading(true);
       try {
-        // Direct fetch to bypass library 'undefined' errors and school filters
         const res = await fetch(`https://pokeapi.co/api/v2/move/${moveName}`).then(r => r.json());
         setData({
           type: res.type.name,
@@ -25,7 +24,7 @@ function MoveRow({ moveName }) {
           effect: res.effect_entries?.find(e => e.language.name === "en")?.short_effect.replace("$effect_chance", res.effect_chance) || "No description."
         });
         setOpen(true);
-      } catch (err) { console.error("Move fetch error:", err); }
+      } catch (err) { console.error("Move error:", err); }
       setLoading(false);
     } else { setOpen(true); }
   };
@@ -48,6 +47,7 @@ function MoveRow({ moveName }) {
             <div className="flex gap-4">
               <span><span className="text-gray-500 uppercase text-[9px]">Pwr:</span> {data.power}</span>
               <span><span className="text-gray-500 uppercase text-[9px]">PP:</span> {data.pp}</span>
+              <span><span className="text-gray-500 uppercase text-[9px]">Acc:</span> {data.accuracy}</span>
             </div>
             <span className={`uppercase font-black text-[9px] px-2 py-0.5 rounded ${data.category === 'physical' ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'}`}>{data.category}</span>
           </div>
@@ -63,6 +63,7 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
   const [evoChain, setEvoChain] = useState([]);
   const [activeTab, setActiveTab] = useState("info");
   const [isShiny, setIsShiny] = useState(false);
+  const [isMaxStats, setIsMaxStats] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -87,9 +88,15 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
 
   if (!pokemon) return null;
 
+  // IV CALC ENGINE (LegendaryPKMN/ivcalc inspired)
+  const calcStat = (base, isHP) => {
+    if (!isMaxStats) return base;
+    return isHP ? Math.floor(base * 2 + 31 + 63 + 110) : Math.floor(base * 2 + 31 + 63 + 5);
+  };
+
   const bst = pokemon.stats.reduce((total, s) => total + s.base_stat, 0);
 
-  // PROXY URLs (School Filter Fix)
+  // SCHOOL-SAFE PROXY URLS (Gen 9 Scaling Fix Included)
   const normalImg = `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/${id}.png`;
   const shinyImg = `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/shiny/${id}.png`;
 
@@ -97,11 +104,10 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
     <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-[#0c0c0e] border border-white/10 rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
         
-        {/* HEADER - Fixed Gen 9 Scaling */}
+        {/* HEADER */}
         <div className="p-6 border-b border-white/5 bg-white/5 relative">
             <div className="absolute top-0 right-0 w-32 h-32 blur-[80px] opacity-20" style={{ backgroundColor: TYPE_COLORS[pokemon.types[0].type.name] }}></div>
             <div className="flex gap-5 items-center relative z-10">
-                {/* Fixed Container to keep Shiny and Normal the same size */}
                 <div className="w-28 h-28 flex items-center justify-center bg-white/5 rounded-3xl border border-white/5 shadow-inner">
                   <img 
                     src={isShiny ? shinyImg : normalImg} 
@@ -144,10 +150,9 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
                         {evoChain.map((evo, i) => (
                             <div key={evo.id} className="flex flex-col items-center">
                                 <button onClick={() => onJump(evo.id)} className={`w-full flex items-center gap-4 p-4 rounded-3xl border transition-all ${evo.id == id ? 'bg-emerald-600/20 border-emerald-500 text-white shadow-lg' : 'bg-white/5 border-white/5 text-gray-500 hover:bg-white/10'}`}>
-                                    {/* Big Evolution Icons (PokeSprite inspired) */}
                                     <img src={`https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${evo.id}.png`} className="w-16 h-16 pixelated drop-shadow-md" alt={evo.name} />
                                     <span className="capitalize text-base tracking-tight">{evo.name}</span>
-                                    {evo.id == id && <span className="ml-auto text-[9px] bg-emerald-500 text-white px-3 py-1 rounded-full uppercase">ACTIVE</span>}
+                                    {evo.id == id && <span className="ml-auto text-[9px] bg-emerald-500 text-white px-3 py-1 rounded-full">ACTIVE</span>}
                                 </button>
                                 {i < evoChain.length - 1 && <div className="py-2"><ArrowRight size={20} className="text-gray-800 rotate-90" /></div>}
                             </div>
@@ -160,7 +165,6 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
           {activeTab === 'battle' && (
             <div className="space-y-4 font-black">
               <div className="relative h-64 bg-[#141416] rounded-[2.5rem] border border-white/5 flex flex-col justify-end p-8 overflow-hidden">
-                {/* ENEMY (Top Right) */}
                 <div className="absolute top-6 right-10 flex flex-col items-center">
                   <div className="w-20 h-3 bg-black/40 rounded-full blur-sm mb-[-12px]"></div>
                   <img 
@@ -171,7 +175,6 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
                   />
                   <div className="bg-black/80 px-3 py-1 rounded-full border border-white/10 text-[9px] text-white uppercase mt-2 shadow-lg tracking-widest">Enemy Level 50</div>
                 </div>
-                {/* PLAYER (Bottom Left) - BattleEngine Perspective */}
                 <div className="flex flex-col items-start mb-2">
                   <img 
                     src={isShiny ? `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/back/shiny/${id}.png` : `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/back/${id}.png`} 
@@ -179,10 +182,10 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
                     onError={(e) => { e.target.src = normalImg; }} 
                     alt="yours" 
                   />
-                  <div className="bg-emerald-600 px-3 py-1 rounded-full text-[9px] text-white uppercase tracking-widest mt-4 shadow-xl">Your Pokémon</div>
+                  <div className="bg-emerald-600 px-3 py-1 rounded-full text-[9px] text-white uppercase tracking-widest mt-4 shadow-xl">Player</div>
                 </div>
               </div>
-              <p className="text-[9px] text-gray-600 uppercase tracking-widest text-center italic">Type Matchup Logic Active</p>
+              <p className="text-[9px] text-gray-600 uppercase tracking-widest text-center italic">Battle Preview Mode</p>
             </div>
           )}
 
@@ -194,27 +197,44 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
 
           {activeTab === 'stats' && (
              <div className="space-y-6 font-black">
-               <div className="space-y-4">
-                 {pokemon.stats.map(s => (
-                   <div key={s.stat.name}>
-                     <div className="flex justify-between text-[10px] uppercase text-gray-500 mb-1.5 text-left">
-                       <span>{s.stat.name.replace("special-", "sp. ")}</span>
-                       <span className="text-white">{s.base_stat}</span>
-                     </div>
-                     <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                       <div className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: `${(s.base_stat/255)*100}%` }} />
-                     </div>
-                   </div>
-                 ))}
+               <div className="flex justify-between items-center mb-2">
+                 <h3 className="text-[10px] text-gray-600 uppercase tracking-widest text-left">Base Stats</h3>
+                 <button 
+                  onClick={() => setIsMaxStats(!isMaxStats)}
+                  className={`text-[9px] px-3 py-1 rounded-full border transition-all ${isMaxStats ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-white/5 text-gray-400 border-white/10'}`}
+                 >
+                   {isMaxStats ? "LVL 100 STATS" : "SHOW LVL 100"}
+                 </button>
                </div>
-               {/* PKHeX Stats Footer */}
+               
+               <div className="space-y-4">
+                 {pokemon.stats.map(s => {
+                   const displayVal = calcStat(s.base_stat, s.stat.name === 'hp');
+                   const barW = isMaxStats ? (displayVal / 504) * 100 : (displayVal / 255) * 100;
+                   return (
+                    <div key={s.stat.name}>
+                      <div className="flex justify-between text-[10px] uppercase text-gray-500 mb-1.5 text-left">
+                        <span>{s.stat.name.replace("special-", "sp. ")}</span>
+                        <span className="text-white">{displayVal}</span>
+                      </div>
+                      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-500 ${isMaxStats ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-emerald-500'}`} 
+                          style={{ width: `${barW}%` }} 
+                        />
+                      </div>
+                    </div>
+                   )
+                 })}
+               </div>
+               
                <div className="mt-8 pt-6 border-t border-white/10 flex justify-between items-end">
                  <div className="text-left">
                     <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-1">Base Stat Total</p>
                     <p className="text-4xl text-white leading-none tracking-tighter">{bst}</p>
                  </div>
                  <div className="bg-emerald-500/20 text-emerald-400 px-5 py-2 rounded-2xl border border-emerald-500/30 text-[10px] uppercase tracking-widest">
-                    {bst > 580 ? 'Legendary' : bst > 500 ? 'Mythical' : 'Standard'}
+                    {bst > 580 ? 'Legendary' : bst > 500 ? 'Elite' : 'Standard'}
                  </div>
                </div>
              </div>

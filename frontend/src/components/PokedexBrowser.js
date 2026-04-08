@@ -1,112 +1,120 @@
-import { useState, useEffect } from "react";
-import { Search, Loader2 } from "lucide-react";
-import { api } from "../lib/pokemonClient"; // This uses the new node library
-import { TYPE_COLORS } from "../data/theme";
+import React, { useState, useEffect } from "react";
+import { Search, Loader2, Info } from "lucide-react";
 import PokemonDetailsModal from "./PokemonDetailsModal";
 
-const GEN_RANGES = {
-  1: { min: 1, max: 151, name: "Gen I" },
-  2: { min: 152, max: 251, name: "Gen II" },
-  3: { min: 252, max: 386, name: "Gen III" },
-  4: { min: 387, max: 493, name: "Gen IV" },
-  5: { min: 494, max: 649, name: "Gen V" },
-  6: { min: 650, max: 721, name: "Gen VI" },
-  7: { min: 722, max: 809, name: "Gen VII" },
-  8: { min: 810, max: 905, name: "Gen VIII" },
-  9: { min: 906, max: 1025, name: "Gen IX" },
-  0: { min: 1, max: 1025, name: "All" }
-};
-
 export default function PokedexBrowser() {
-  const [gen, setGen] = useState(3);
   const [pokemonList, setPokemonList] = useState([]);
+  const [filteredList, setFilteredList] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState(null);
 
+  // 1. Bulletproof Fetch (Replaces the broken Do.listPokemons)
   useEffect(() => {
-    async function fetchGen() {
-      setLoading(true);
+    async function fetchPokedex() {
       try {
-        const { min, max } = GEN_RANGES[gen];
-        // Using pokenode-ts to list pokemon
-        const data = await api.listPokemons(min - 1, max - min + 1);
+        setLoading(true);
+        // Fetching up to Gen 9 (1025 Pokemon)
+        const response = await fetch("https://pokeapi.co/api/v2/pokemon?limit=1025");
+        const data = await response.json();
         
-        const formatted = data.results.map((p) => {
-          const id = p.url.split("/").filter(Boolean).pop();
+        const formatted = data.results.map((p, index) => {
+          const id = index + 1;
           return {
-            id,
             name: p.name,
-            sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
+            id: id,
+            // School-safe jsDelivr Proxy
+            image: `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/${id}.png`
           };
         });
+        
         setPokemonList(formatted);
+        setFilteredList(formatted);
       } catch (err) {
-        console.error("Failed to fetch Pokedex", err);
+        console.error("Failed to fetch Pokedex:", err);
       } finally {
         setLoading(false);
       }
     }
-    fetchGen();
-  }, [gen]);
+    fetchPokedex();
+  }, []);
 
-  const filtered = pokemonList.filter(p => p.name.includes(search.toLowerCase()));
+  // 2. Search Logic
+  useEffect(() => {
+    const filtered = pokemonList.filter(p => 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      p.id.toString() === searchQuery
+    );
+    setFilteredList(filtered);
+  }, [searchQuery, pokemonList]);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#0c0c0e]">
+        <Loader2 className="animate-spin text-emerald-500" size={40} />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 pt-12">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-        <h1 className="text-4xl font-black text-emerald-500 italic tracking-tighter">POKÉDEX</h1>
-        <div className="flex flex-wrap justify-center gap-2">
-          {Object.entries(GEN_RANGES).map(([key, info]) => (
-            <button
-              key={key}
-              onClick={() => setGen(Number(key))}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                gen === Number(key) ? "bg-emerald-600 border-emerald-500 text-white" : "bg-[#16161A] border-white/5 text-gray-500 hover:text-white"
-              }`}
-            >
-              {info.name}
-            </button>
-          ))}
+    <div className="min-h-screen bg-[#0c0c0e] text-white p-4 md:p-8">
+      {/* Search Header */}
+      <div className="max-w-6xl mx-auto mb-10">
+        <h1 className="text-4xl font-black tracking-tighter mb-6 text-left">POKEDEX</h1>
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-emerald-500 transition-colors" size={20} />
+          <input 
+            type="text"
+            placeholder="Search by name or ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all font-bold"
+          />
         </div>
       </div>
 
-      <div className="relative mb-10">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-        <input 
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search by name..." 
-          className="w-full bg-[#16161A] border border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-emerald-500/50 text-white text-lg"
-        />
+      {/* Pokemon Grid */}
+      <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {filteredList.map((pokemon) => (
+          <button
+            key={pokemon.id}
+            onClick={() => setSelectedId(pokemon.id)}
+            className="group relative bg-white/5 border border-white/5 rounded-[2rem] p-6 hover:bg-white/10 hover:border-white/20 transition-all text-left overflow-hidden active:scale-95"
+          >
+            {/* Background ID Number */}
+            <span className="absolute -bottom-2 -right-2 text-6xl font-black text-white/5 tracking-tighter group-hover:text-white/10 transition-colors">
+              #{pokemon.id}
+            </span>
+
+            <div className="relative z-10">
+              <div className="w-full aspect-square flex items-center justify-center mb-4">
+                <img 
+                  src={pokemon.image} 
+                  alt={pokemon.name} 
+                  className="w-full h-full object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300"
+                  loading="lazy"
+                />
+              </div>
+              <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">#{pokemon.id.toString().padStart(3, '0')}</p>
+              <h3 className="text-xl font-black capitalize tracking-tight">{pokemon.name}</h3>
+            </div>
+          </button>
+        ))}
       </div>
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="animate-spin text-emerald-500 w-12 h-12 mb-4" />
-          <p className="text-gray-500 font-bold">LOADING DATA...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {filtered.map(p => (
-            <button 
-              key={p.id} 
-              onClick={() => setSelectedId(p.id)}
-              className="bg-[#16161A] border border-white/5 p-6 rounded-3xl flex flex-col items-center hover:border-emerald-500/50 transition-all group hover:bg-[#1c1c21]"
-            >
-              <img src={p.sprite} className="w-24 h-24 group-hover:scale-110 transition-transform" alt={p.name} />
-              <span className="text-[10px] font-mono text-gray-600 mt-4 font-bold">#{String(p.id).padStart(3, '0')}</span>
-              <span className="text-sm font-black capitalize text-gray-200 mt-1 truncate w-full text-center tracking-tight">{p.name.replace("-"," ")}</span>
-            </button>
-          ))}
+      {/* No Results */}
+      {filteredList.length === 0 && (
+        <div className="text-center py-20">
+          <p className="text-gray-500 font-bold">No Pokemon found matching "{searchQuery}"</p>
         </div>
       )}
 
+      {/* Modal Integration */}
       {selectedId && (
         <PokemonDetailsModal 
           id={selectedId} 
-          onClose={() => setSelectedId(null)} 
-          onJump={(newId) => setSelectedId(newId)} 
+          onClose={() => setSelectedId(null)}
+          onJump={(newId) => setSelectedId(newId)}
         />
       )}
     </div>
