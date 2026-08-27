@@ -34,7 +34,7 @@ const PLATFORMS = [
 const FEATURES = [
   { icon: Zap, title: "Instant Play", desc: "Drop a ROM and play immediately — no installs or plugins needed." },
   { icon: Cpu, title: "Cycle-Accurate", desc: "EmulatorJS mGBA core for accurate GBA emulation with save states." },
-  { icon: Trophy, title: "Nuzlocke Tracker", desc: "Built-in run tracker. Log encounters, party HP, and manage entire runs." },
+  { icon: Trophy, title: "Save States", desc: "Save and restore progress instantly — perfect for tough boss fights." },
   { icon: Monitor, title: "Full Screen", desc: "Expand to full screen, remap controls, adjust volume." },
 ];
 
@@ -93,7 +93,7 @@ export default function HomePage() {
             <span className="text-emerald-400">Game Instantly</span>
           </h1>
           <p className="text-gray-400 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-            Upload a ROM file, play in your browser. Track Nuzlocke runs for Radical Red, Emerald, Crystal, and any GB/GBC/GBA game.
+            Upload a ROM file, play in your browser. Supports Emerald, FireRed, Crystal, and any GB/GBC/GBA game.
           </p>
 
           {/* Drop Zone */}
@@ -171,7 +171,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Nuzlocke CTA Banner */}
+      {/* Library CTA Banner */}
       <section className="max-w-5xl mx-auto px-4 pb-24">
         <div className="bg-gradient-to-r from-[#0F1A14] via-[#111A14] to-[#141417] border border-emerald-500/20 rounded-xl p-8 flex flex-col sm:flex-row items-center gap-6">
           <div className="w-14 h-14 bg-emerald-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -179,18 +179,18 @@ export default function HomePage() {
           </div>
           <div className="flex-1 text-center sm:text-left">
             <h3 className="text-white font-bold text-xl mb-1" style={{ fontFamily: "Outfit, sans-serif" }}>
-              Built-in Nuzlocke Tracker
+              Your Game Library
             </h3>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Log encounters, track party HP, manage full runs. Designed for Radical Red, Emerald, Crystal &amp; any hack.
+              Recently played ROMs, boss guides, Pokédex, and type coverage — all in one place.
             </p>
           </div>
           <button
-            onClick={() => navigate("/nuzlocke")}
-            data-testid="nuzlocke-cta-btn"
+            onClick={() => navigate("/library")}
+            data-testid="library-cta-btn"
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex-shrink-0"
           >
-            Start Tracking <ArrowRight className="w-4 h-4" />
+            Browse Library <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </section>
@@ -201,7 +201,7 @@ export default function HomePage() {
           <Gamepad2 className="w-4 h-4 text-emerald-400" />
           <span className="text-white font-semibold text-sm" style={{ fontFamily: "Outfit" }}>NuzlockeStudio</span>
         </div>
-        <p className="text-gray-700 text-xs">GB · GBC · GBA Emulation + Nuzlocke Tracking</p>
+        <p className="text-gray-700 text-xs">GB · GBC · GBA Emulation — Netlify Hosted</p>
       </footer>
     </div>
   );

@@ -15,12 +15,8 @@ export default function LibraryPage() {
     } catch (_) {}
   }, []);
 
-  const handlePlay = async (entry) => {
-    // Note: This relies on the browser caching the file via the File System Access API
-    // or requires the user to re-upload. In a typical pure-frontend web emulator,
-    // storing the actual ROM binary in localStorage is often impossible due to size limits.
-    // This assumes your loadRom handles file objects. 
-    alert("Please re-upload the ROM file to play. Browser security prevents storing large binaries permanently.");
+  const handlePlay = async () => {
+    alert("Browser security prevents storing ROM binaries. Please re-upload the ROM file via Play -> Load ROM.");
   };
 
   const removeEntry = (name) => {

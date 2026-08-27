@@ -35,7 +35,12 @@ function loadAllStates() {
 }
 
 function persistAllStates(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn("SaveStateManager: localStorage quota exceeded", e);
+    alert("Save state metadata storage full. Export and clear old states.");
+  }
 }
 
 // ─── Tag Picker ─────────────────────────────────────────────────────────────
@@ -361,7 +366,7 @@ export default function SaveStateManager({ romName }) {
               <HardDrive className="w-8 h-8 text-gray-800 mx-auto mb-2" />
               <p className="text-gray-600 text-sm">No save states yet</p>
               <p className="text-gray-700 text-xs mt-1">
-                Press <kbd className="bg-gray-800 border border-gray-700 rounded px-1 text-gray-500 font-mono text-[10px]">F1</kbd> in-game or click New
+                Click New to add a bookmark — use Emulator menu Save State for actual saves
               </p>
             </div>
           ) : (
@@ -379,7 +384,7 @@ export default function SaveStateManager({ romName }) {
           {/* Tip */}
           {slots.length > 0 && (
             <p className="text-gray-700 text-[11px] text-center pt-1">
-              Use <kbd className="bg-gray-800 border border-gray-700 rounded px-1 font-mono text-[10px]">F1</kbd> quick save · <kbd className="bg-gray-800 border border-gray-700 rounded px-1 font-mono text-[10px]">F2</kbd> quick load in-game
+              Bookmarks are metadata only — use Emulator Save State / Load State for actual progress. Export to backup.
             </p>
           )}
         </div>

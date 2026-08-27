@@ -31,9 +31,10 @@ dist/
 dist
 
 # Environment files (comprehensive coverage)
-
 *token.json*
 *credentials.json*
+*.env
+*.env.*
 
 # Logs and debug files
 npm-debug.log*
@@ -78,16 +79,5 @@ agenthub/agents/youtube/db
 
 memory/test_credentials.md
 
-# Mobile development
-android-sdk/-e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
+# Misc
+t

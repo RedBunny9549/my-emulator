@@ -25,6 +25,14 @@ function App() {
     setRomFile(file);
     setCoreType(core);
     setGameTitle(file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " "));
+    // Persist history for LibraryPage (metadata only — browser cannot store ROM binary due to size limits)
+    try {
+      const entry = { name: file.name, size: file.size, lastPlayed: new Date().toISOString(), core };
+      const stored = JSON.parse(localStorage.getItem("recent_roms") || "[]");
+      const filtered = stored.filter((r) => r.name !== file.name);
+      filtered.unshift(entry);
+      localStorage.setItem("recent_roms", JSON.stringify(filtered.slice(0, 20)));
+    } catch (_) {}
   };
 
   return (
@@ -43,7 +51,7 @@ function App() {
               <Route path="/coverage"    element={<TypeCoverageMap />} />
               <Route path="/database"    element={<DatabaseBrowser />} />
               
-              {/* Catch-all for any broken links or old Nuzlocke bookmarks */}
+              {/* Catch-all */}
               <Route path="*"            element={<Navigate to="/play" replace />} />
             </Routes>
           </main>

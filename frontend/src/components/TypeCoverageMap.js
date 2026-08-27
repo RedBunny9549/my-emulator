@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { TYPE_COLOR } from "../data/typeData";
 import { LayoutGrid, X } from "lucide-react";
 
-// Generate charts dynamically based on Generation
+// Generate charts dynamically based on Generation - uses deep clone to avoid mutation leaks
 const getChartForGen = (gen) => {
   const base = {
     normal: { weak_to: ["fighting"], resists: [], immune_to: ["ghost"] },
@@ -22,37 +22,38 @@ const getChartForGen = (gen) => {
     dragon: { weak_to: ["ice", "dragon"], resists: ["fire", "water", "electric", "grass"], immune_to: [] },
   };
 
-  if (gen === 1) return base; // Kanto Only
+  if (gen === 1) return structuredClone(base); // Kanto Only - clone to prevent mutation
 
+  const chart = structuredClone(base);
   // Gen 2-5 Changes (Dark, Steel added. Psychic nerfed. Bug/Poison fixed)
-  base.psychic.weak_to.push("ghost", "dark");
-  base.psychic.immune_to = [];
-  base.bug.weak_to = ["fire", "flying", "rock"]; // Removed Poison weakness
-  base.poison.resists.push("bug");
+  chart.psychic.weak_to.push("ghost", "dark");
+  chart.psychic.immune_to = [];
+  chart.bug.weak_to = ["fire", "flying", "rock"]; // Removed Poison weakness
+  chart.poison.resists.push("bug");
   
-  base.dark = { weak_to: ["fighting", "bug"], resists: ["ghost", "dark"], immune_to: ["psychic"] };
-  base.steel = { weak_to: ["fire", "fighting", "ground"], resists: ["normal", "grass", "ice", "flying", "psychic", "bug", "rock", "dragon", "steel", "ghost", "dark"], immune_to: ["poison"] };
+  chart.dark = { weak_to: ["fighting", "bug"], resists: ["ghost", "dark"], immune_to: ["psychic"] };
+  chart.steel = { weak_to: ["fire", "fighting", "ground"], resists: ["normal", "grass", "ice", "flying", "psychic", "bug", "rock", "dragon", "steel", "ghost", "dark"], immune_to: ["poison"] };
   
-  base.fire.resists.push("steel");
-  base.water.resists.push("steel");
-  base.electric.resists.push("steel");
-  base.ice.weak_to.push("steel");
-  base.rock.weak_to.push("steel");
+  chart.fire.resists.push("steel");
+  chart.water.resists.push("steel");
+  chart.electric.resists.push("steel");
+  chart.ice.weak_to.push("steel");
+  chart.rock.weak_to.push("steel");
 
-  if (gen <= 5) return base; // Johto, Hoenn, Sinnoh, Unova
+  if (gen <= 5) return chart; // Johto, Hoenn, Sinnoh, Unova
 
   // Gen 6+ Changes (Fairy added, Steel loses Ghost/Dark resist)
-  base.steel.resists = base.steel.resists.filter(t => t !== "ghost" && t !== "dark");
-  base.steel.resists.push("fairy");
+  chart.steel.resists = chart.steel.resists.filter(t => t !== "ghost" && t !== "dark");
+  chart.steel.resists.push("fairy");
   
-  base.fairy = { weak_to: ["poison", "steel"], resists: ["fighting", "bug", "dark"], immune_to: ["dragon"] };
-  base.fighting.weak_to.push("fairy");
-  base.dragon.weak_to.push("fairy");
-  base.dark.weak_to.push("fairy");
-  base.fire.resists.push("fairy");
-  base.poison.resists.push("fairy");
+  chart.fairy = { weak_to: ["poison", "steel"], resists: ["fighting", "bug", "dark"], immune_to: ["dragon"] };
+  chart.fighting.weak_to.push("fairy");
+  chart.dragon.weak_to.push("fairy");
+  chart.dark.weak_to.push("fairy");
+  chart.fire.resists.push("fairy");
+  chart.poison.resists.push("fairy");
 
-  return base;
+  return chart;
 };
 
 export default function TypeCoverageMap() {

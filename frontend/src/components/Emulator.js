@@ -82,7 +82,9 @@ export default function Emulator({ romFile, biosFile }) {
       biosUrl = URL.createObjectURL(biosFile);
       window.EJS_biosUrl = biosUrl;
     } else if (core === "gba") {
+      // Netlify static: try remote BIOS but don't break if blocked (mGBA works without it)
       window.EJS_biosUrl = GBA_BIOS_URL;
+      // If BIOS fetch fails, EmulatorJS will fallback to HLE BIOS automatically
     }
 
     // Inject badge hide early too
