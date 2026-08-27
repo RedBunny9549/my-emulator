@@ -148,7 +148,7 @@ export default function PlayPage() {
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">No ROM Loaded</h2>
         <p className="text-gray-500 mb-8 text-center">Upload a .gb, .gbc, .gba, .smc, .sfc or .zip ROM file</p>
-        <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z" className="hidden" onChange={handleRomChange} />
+        <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z,.GB,.GBC,.GBA" className="sr-only" style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }} onChange={handleRomChange} />
         <button onClick={() => romRef.current?.click()} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-lg font-semibold transition-all">
           <Upload className="w-5 h-5" /> Load ROM File
         </button>
@@ -253,7 +253,7 @@ export default function PlayPage() {
                  ) : (
                    <label className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-300 cursor-pointer">
                      <Upload className="w-4 h-4" /> Upload GBA BIOS (.bin)
-                     <input type="file" accept=".bin" className="hidden" onChange={(e)=>{const f=e.target.files[0]; if(f){setBiosFile(f); setEmuKey(k=>k+1);} e.target.value="";}} />
+                     <input type="file" accept=".bin,.gba" className="sr-only" style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }} onChange={(e)=>{const f=e.target.files[0]; if(f){setBiosFile(f); setEmuKey(k=>k+1);} e.target.value="";}} />
                    </label>
                  )}
                  {!biosFile && <p className="text-[10px] text-gray-700 mt-1">Fallback: remote BIOS from emergentagent.com or HLE if blocked.</p>}
@@ -264,7 +264,7 @@ export default function PlayPage() {
                    EmulatorJS handles gamepad + keyboard. In-game menu: fullscreen, save/load, volume. Gamepad auto-detected. See docs: emulatorjs.org/docs/options + emulatorjs.org/docs4devs/control-mapping
                  </p>
                </div>
-               <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z" className="hidden" onChange={handleRomChange} />
+               <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z,.GB,.GBC,.GBA" className="sr-only" style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }} onChange={handleRomChange} />
                <button onClick={() => romRef.current?.click()} className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors">
                  <FileUp className="w-5 h-5" /> Change ROM File
                </button>

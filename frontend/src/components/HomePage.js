@@ -144,8 +144,9 @@ export default function HomePage() {
             <input
               ref={fileRef}
               type="file"
-              accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z"
-              className="hidden"
+              accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z,.GB,.GBC,.GBA"
+              className="sr-only"
+              style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }}
               data-testid="rom-file-input"
               onChange={(e) => handleFile(e.target.files[0])}
             />
