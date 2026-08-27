@@ -3,13 +3,16 @@ import { useEffect, useRef } from "react";
 const GBA_BIOS_URL =
   "https://customer-assets.emergentagent.com/job_nuzlocke-scanner/artifacts/gibis365_gba_bios_romsretro.com.bin";
 
-// EmulatorJS core names — per https://emulatorjs.org/docs/systems/snes (snes -> snes9x, bsnes)
+// EmulatorJS core names — per https://emulatorjs.org/docs
+// snes -> snes9x/bsnes, nes -> fceumm/nestopia, segaMD -> genesis_plus_gx
 function detectCore(filename) {
   const ext = filename.toLowerCase().split(".").pop();
   if (ext === "gba") return "gba";
-  if (ext === "gbc") return "gambatte";
-  if (ext === "gb")  return "gambatte";
+  if (ext === "gbc" || ext === "gb") return "gambatte";
   if (ext === "sfc" || ext === "smc" || ext === "fig" || ext === "snes" || ext === "bs") return "snes";
+  if (ext === "nes" || ext === "fds" || ext === "unif" || ext === "unf") return "nes";
+  if (ext === "md" || ext === "smd" || ext === "gen" || ext === "bin") return "segaMD";
+  if (ext === "zip" || ext === "7z") return "snes"; // zip may contain any — snes as fallback, user can override via manual core picker
   return "snes";
 }
 
@@ -27,14 +30,14 @@ function injectBadgeHide() {
   document.head.appendChild(style);
 }
 
-export default function Emulator({ romFile, biosFile }) {
+export default function Emulator({ romFile, biosFile, coreOverride }) {
   const containerRef = useRef(null);
 
   useEffect(() => {
     if (!romFile) return;
 
     const romUrl = URL.createObjectURL(romFile);
-    const core = detectCore(romFile.name);
+    const core = coreOverride || detectCore(romFile.name);
     let biosUrl = null;
     const container = containerRef.current;
 
@@ -111,7 +114,7 @@ export default function Emulator({ romFile, biosFile }) {
         delete window.EJS_onGameStart;
       } catch (_) {}
     };
-  }, [romFile, biosFile]);
+  }, [romFile, biosFile, coreOverride]);
 
   return (
     <div

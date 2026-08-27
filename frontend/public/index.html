@@ -8,6 +8,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />
+        <link rel="manifest" href="/manifest.json" />
         <title>Gavyn's Pokemon Tool</title>
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
     </head>
@@ -16,5 +17,10 @@
         <div id="root"></div>
 
         <!-- PostHog removed for Netlify static privacy; re-add via REACT_APP_POSTHOG_KEY if needed -->
+        <script>
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+          }
+        </script>
     </body>
 </html>

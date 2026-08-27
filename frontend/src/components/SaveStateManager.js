@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { HardDrive, Plus, Trash2, Tag, Clock, ChevronDown, ChevronUp, Download, Upload, Pencil, Check, X, Layers } from "lucide-react";
+import { HardDrive, Plus, Trash2, Tag, Clock, ChevronDown, ChevronUp, Download, Upload, Pencil, Check, X, Layers, Database } from "lucide-react";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -24,22 +24,67 @@ const TAGS = [
   { label: "Custom", color: "text-gray-400 bg-gray-500/10 border-gray-500/20" },
 ];
 
-const STORAGE_KEY = "save_state_manager";
+const LS_KEY = "save_state_manager";
+const DB_NAME = "emulator-saves-v2";
+const STORE = "bookmarks";
 
-function loadAllStates() {
+// ─── IndexedDB wrapper (bookmarks metadata + optional save blobs) ───────────
+function openDB() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === "undefined") return reject(new Error("no indexedDB"));
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbGetAll() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readonly");
+      const store = tx.objectStore(STORE);
+      const req = store.get("all");
+      req.onsuccess = () => {
+        const val = req.result;
+        if (val) resolve(val);
+        else {
+          // migrate from localStorage
+          try {
+            const ls = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+            if (Object.keys(ls).length) {
+              // save to idb async
+              const tx2 = db.transaction(STORE, "readwrite");
+              tx2.objectStore(STORE).put(ls, "all");
+            }
+            resolve(ls || {});
+          } catch { resolve({}); }
+        }
+      };
+      req.onerror = () => reject(req.error);
+    });
   } catch {
-    return {};
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; }
   }
 }
 
-function persistAllStates(data) {
+async function idbSetAll(data) {
+  // keep localStorage in sync for export compatibility
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch {}
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const db = await openDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      const req = tx.objectStore(STORE).put(data, "all");
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
   } catch (e) {
-    console.warn("SaveStateManager: localStorage quota exceeded", e);
-    alert("Save state metadata storage full. Export and clear old states.");
+    console.warn("SaveStateManager: IDB write failed, LS fallback", e);
   }
 }
 
@@ -90,14 +135,12 @@ function SaveSlot({ slot, romName, onDelete, onUpdate }) {
   return (
     <div className="group bg-[#0A0A0C] border border-white/5 hover:border-white/10 rounded-xl p-4 transition-all">
       <div className="flex items-start justify-between gap-3">
-        {/* Slot icon + info */}
         <div className="flex items-start gap-3 min-w-0 flex-1">
           <div className="w-9 h-9 flex-shrink-0 bg-[#141417] border border-white/5 rounded-lg flex items-center justify-center">
             <HardDrive className="w-4 h-4 text-gray-600" />
           </div>
 
           <div className="min-w-0 flex-1">
-            {/* Name */}
             {editing ? (
               <div className="flex items-center gap-1.5 mb-1">
                 <input
@@ -126,7 +169,6 @@ function SaveSlot({ slot, romName, onDelete, onUpdate }) {
               </div>
             )}
 
-            {/* Meta row */}
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1 text-gray-600 text-xs">
                 <Clock className="w-3 h-3" />
@@ -137,6 +179,11 @@ function SaveSlot({ slot, romName, onDelete, onUpdate }) {
                   {slot.tag}
                 </span>
               )}
+              {slot.hasBlob && (
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded flex items-center gap-1">
+                  <Database className="w-3 h-3" /> save
+                </span>
+              )}
               <button
                 onClick={() => setEditingTag((v) => !v)}
                 className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-gray-400 text-xs flex items-center gap-0.5 transition-all"
@@ -145,12 +192,10 @@ function SaveSlot({ slot, romName, onDelete, onUpdate }) {
               </button>
             </div>
 
-            {/* Notes */}
             {slot.notes && (
               <p className="text-gray-600 text-xs mt-1.5 italic truncate">{slot.notes}</p>
             )}
 
-            {/* Tag picker */}
             {editingTag && (
               <TagPicker
                 selected={slot.tag}
@@ -163,7 +208,6 @@ function SaveSlot({ slot, romName, onDelete, onUpdate }) {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-1.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all">
           <button
             onClick={() => onDelete(slot.id)}
@@ -188,24 +232,25 @@ function NewSlotForm({ onSave, onCancel }) {
   const handleSave = () => {
     if (!name.trim()) return;
     onSave({
-      id: crypto.randomUUID(),
+      id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
       name: name.trim(),
       notes: notes.trim(),
       tag,
       savedAt: Date.now(),
+      hasBlob: false,
     });
   };
 
   return (
     <div className="bg-[#0A0A0C] border border-emerald-500/20 rounded-xl p-4 space-y-3">
-      <p className="text-xs font-bold uppercase tracking-wider text-emerald-500">New Save State</p>
+      <p className="text-xs font-bold uppercase tracking-wider text-emerald-500">New Bookmark</p>
 
       <input
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") onCancel(); }}
-        placeholder="Save state name..."
+        placeholder="Bookmark name..."
         className="w-full bg-[#141417] border border-white/5 focus:border-emerald-500/40 text-white placeholder-gray-600 text-sm px-3 py-2 rounded-lg outline-none transition-colors"
       />
 
@@ -243,26 +288,67 @@ function NewSlotForm({ onSave, onCancel }) {
 // ─── Save State Manager ──────────────────────────────────────────────────────
 
 export default function SaveStateManager({ romName }) {
-  const [allStates, setAllStates] = useState(loadAllStates);
+  const [allStates, setAllStates] = useState({});
   const [expanded, setExpanded] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   const romKey = romName || "__global__";
   const slots = allStates[romKey] || [];
 
+  useEffect(() => {
+    let cancelled = false;
+    idbGetAll().then((data) => {
+      if (!cancelled) {
+        setAllStates(data);
+        setLoaded(true);
+      }
+    });
+    // Hook EmulatorJS save capture — if user presses emulator Save State, also create a bookmark
+    const prevOnSaveState = window.EJS_onSaveState;
+    window.EJS_onSaveState = (e) => {
+      // e may be [screenshot, state] per docs
+      try {
+        const screenshot = Array.isArray(e) ? e[0] : e?.screenshot;
+        // create auto bookmark with screenshot indicator
+        const autoSlot = {
+          id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+          name: `Auto ${new Date().toLocaleTimeString()}`,
+          notes: "Captured from emulator Save State",
+          tag: "Safe Point",
+          savedAt: Date.now(),
+          hasBlob: !!screenshot,
+        };
+        // async save — reload latest
+        idbGetAll().then((latest) => {
+          const key = romName || "__global__";
+          const list = latest[key] || [];
+          const updated = { ...latest, [key]: [autoSlot, ...list].slice(0, 50) };
+          idbSetAll(updated);
+          if (!cancelled) setAllStates(updated);
+        });
+      } catch {}
+      if (typeof prevOnSaveState === "function") try { prevOnSaveState(e); } catch {}
+    };
+    return () => {
+      cancelled = true;
+      window.EJS_onSaveState = prevOnSaveState;
+    };
+  }, [romName]);
+
   const persist = (updated) => {
     setAllStates(updated);
-    persistAllStates(updated);
+    idbSetAll(updated);
   };
 
   const addSlot = (slot) => {
-    const updated = { ...allStates, [romKey]: [slot, ...slots] };
+    const updated = { ...allStates, [romKey]: [slot, ...slots].slice(0, 100) };
     persist(updated);
     setAdding(false);
   };
 
   const deleteSlot = (id) => {
-    if (!window.confirm("Delete this save state?")) return;
+    if (!window.confirm("Delete this bookmark?")) return;
     const updated = { ...allStates, [romKey]: slots.filter((s) => s.id !== id) };
     persist(updated);
   };
@@ -275,7 +361,6 @@ export default function SaveStateManager({ romName }) {
     persist(updated);
   };
 
-  // Export all states as JSON
   const exportStates = () => {
     const blob = new Blob([JSON.stringify(allStates, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -286,7 +371,6 @@ export default function SaveStateManager({ romName }) {
     URL.revokeObjectURL(url);
   };
 
-  // Import states from JSON
   const importRef = useRef(null);
   const importStates = (e) => {
     const file = e.target.files[0];
@@ -296,7 +380,8 @@ export default function SaveStateManager({ romName }) {
       try {
         const data = JSON.parse(ev.target.result);
         if (typeof data === "object" && data !== null) {
-          persist({ ...allStates, ...data });
+          const merged = { ...allStates, ...data };
+          persist(merged);
         }
       } catch {
         alert("Invalid save state file.");
@@ -306,18 +391,28 @@ export default function SaveStateManager({ romName }) {
     e.target.value = "";
   };
 
+  if (!loaded) {
+    return (
+      <div className="bg-[#141417] border border-white/5 rounded-xl p-4 text-center text-gray-600 text-xs">
+        Loading bookmarks...
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#141417] border border-white/5 rounded-xl overflow-hidden">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
         <button
           onClick={() => setExpanded((v) => !v)}
           className="flex items-center gap-2 text-left"
         >
           <Layers className="w-4 h-4 text-gray-500" />
-          <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Save States</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Bookmarks</span>
           <span className="text-[10px] text-gray-700 font-mono bg-gray-800 px-1.5 py-0.5 rounded">
             {slots.length}
+          </span>
+          <span className="text-[10px] text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded flex items-center gap-1">
+            <Database className="w-3 h-3" /> IDB
           </span>
           {expanded ? (
             <ChevronUp className="w-3.5 h-3.5 text-gray-700" />
@@ -331,14 +426,14 @@ export default function SaveStateManager({ romName }) {
           <button
             onClick={() => importRef.current?.click()}
             className="text-gray-700 hover:text-gray-400 p-1.5 rounded hover:bg-white/5 transition-all"
-            title="Import save states"
+            title="Import bookmarks"
           >
             <Upload className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={exportStates}
             className="text-gray-700 hover:text-gray-400 p-1.5 rounded hover:bg-white/5 transition-all"
-            title="Export save states"
+            title="Export bookmarks"
           >
             <Download className="w-3.5 h-3.5" />
           </button>
@@ -352,21 +447,18 @@ export default function SaveStateManager({ romName }) {
         </div>
       </div>
 
-      {/* Body */}
       {expanded && (
         <div className="p-3 space-y-2">
-          {/* New slot form */}
           {adding && (
             <NewSlotForm onSave={addSlot} onCancel={() => setAdding(false)} />
           )}
 
-          {/* Slot list */}
           {slots.length === 0 && !adding ? (
             <div className="text-center py-8">
               <HardDrive className="w-8 h-8 text-gray-800 mx-auto mb-2" />
-              <p className="text-gray-600 text-sm">No save states yet</p>
+              <p className="text-gray-600 text-sm">No bookmarks yet</p>
               <p className="text-gray-700 text-xs mt-1">
-                Click New to add a bookmark — use Emulator menu Save State for actual saves
+                Click New — or press Save State in emulator menu to auto-capture
               </p>
             </div>
           ) : (
@@ -381,10 +473,9 @@ export default function SaveStateManager({ romName }) {
             ))
           )}
 
-          {/* Tip */}
           {slots.length > 0 && (
             <p className="text-gray-700 text-[11px] text-center pt-1">
-              Bookmarks are metadata only — use Emulator Save State / Load State for actual progress. Export to backup.
+              Bookmarks use IndexedDB (not 5MB localStorage). Real saves via Emulator Save State — auto-captured via EJS_onSaveState. Export to backup.
             </p>
           )}
         </div>

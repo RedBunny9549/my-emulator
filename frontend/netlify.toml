@@ -6,6 +6,17 @@
   # This tells Netlify where your finished site lives
   publish = "build"
 
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "public, max-age=86400"
+
 [[redirects]]
   # This is CRITICAL for React Router. It ensures that if a user goes directly
   # to yoursite.com/pokedex, Netlify doesn't throw a 404 error.

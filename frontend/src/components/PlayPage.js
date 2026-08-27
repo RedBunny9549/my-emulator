@@ -14,7 +14,7 @@ const DEFAULT_AUTOFIRE_TARGET = { key: "e", code: "KeyE", keyCode: 69 };
 
 export default function PlayPage() {
   const navigate = useNavigate();
-  const { romFile, biosFile, setBiosFile, gameTitle, coreType, loadRom } = useEmu();
+  const { romFile, biosFile, setBiosFile, gameTitle, coreType, setCoreType, loadRom } = useEmu();
   const [emuKey, setEmuKey] = useState(0);
   
   const [hotkeys, setHotkeys] = useState(() => {
@@ -148,7 +148,7 @@ export default function PlayPage() {
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">No ROM Loaded</h2>
         <p className="text-gray-500 mb-8 text-center">Upload a .gb, .gbc, .gba, .smc, .sfc or .zip ROM file</p>
-        <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.zip" className="hidden" onChange={handleRomChange} />
+        <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z" className="hidden" onChange={handleRomChange} />
         <button onClick={() => romRef.current?.click()} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-lg font-semibold transition-all">
           <Upload className="w-5 h-5" /> Load ROM File
         </button>
@@ -176,7 +176,7 @@ export default function PlayPage() {
         
         {/* Emulator Canvas */}
         <div className="flex-1 bg-black border border-[#27272A] rounded-xl overflow-hidden shadow-2xl relative flex justify-center min-h-[300px]">
-          <Emulator key={emuKey} romFile={romFile} biosFile={biosFile} />
+          <Emulator key={`${emuKey}-${coreType}`} romFile={romFile} biosFile={biosFile} coreOverride={coreType} />
         </div>
 
         {/* Side Panel Controls */}
@@ -231,7 +231,24 @@ export default function PlayPage() {
             </div>
 
             <div className="space-y-2 pt-4 border-t border-white/5">
-               <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.zip" className="hidden" onChange={handleRomChange} />
+               <div className="bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
+                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Manual Core Override</h4>
+                 <p className="text-[10px] text-gray-600 mb-2">If .zip auto-detect fails, pick core manually (per emulatorjs.org/docs/systems)</p>
+                 <select value={coreType} onChange={(e)=>{setCoreType(e.target.value); setEmuKey(k=>k+1);}} className="w-full bg-[#16161A] border border-white/10 rounded-lg px-3 py-2 text-white text-xs">
+                   <option value="gambatte">GB/GBC — gambatte</option>
+                   <option value="gba">GBA — gba (mGBA)</option>
+                   <option value="snes">SNES — snes (snes9x)</option>
+                   <option value="nes">NES — nes (fceumm)</option>
+                   <option value="segaMD">Mega Drive — segaMD (genesis_plus_gx)</option>
+                 </select>
+               </div>
+               <div className="bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
+                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Controls</h4>
+                 <p className="text-[10px] text-gray-500 leading-relaxed">
+                   EmulatorJS handles gamepad + keyboard. In-game menu: fullscreen, save/load, volume. Gamepad auto-detected. See docs: emulatorjs.org/docs/options + emulatorjs.org/docs4devs/control-mapping
+                 </p>
+               </div>
+               <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z" className="hidden" onChange={handleRomChange} />
                <button onClick={() => romRef.current?.click()} className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors">
                  <FileUp className="w-5 h-5" /> Change ROM File
                </button>

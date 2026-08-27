@@ -24,14 +24,16 @@ function App() {
     if (ext === "gbc" || ext === "gb") core = "gambatte";
     else if (ext === "gba") core = "gba";
     else if (["sfc","smc","fig","snes","bs"].includes(ext)) core = "snes";
-    else if (ext === "zip") core = "snes"; // zip may contain snes or gba — emulatorjs auto-detects
+    else if (["nes","fds","unif","unf"].includes(ext)) core = "nes";
+    else if (["md","smd","gen","bin"].includes(ext)) core = "segaMD";
+    else if (["zip","7z"].includes(ext)) core = "snes";
     setRomFile(file);
     setCoreType(core);
     setGameTitle(file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " "));
   };
 
   return (
-    <EmuContext.Provider value={{ romFile, biosFile, setBiosFile, gameTitle, coreType, loadRom }}>
+    <EmuContext.Provider value={{ romFile, biosFile, setBiosFile, gameTitle, coreType, setCoreType, loadRom }}>
       <div className="App min-h-screen bg-[#0A0A0C] text-white">
         <BrowserRouter>
           <Navbar />

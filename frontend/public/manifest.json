@@ -1,0 +1,10 @@
+{
+  "name": "Gavyn's Emulator",
+  "short_name": "Emulator",
+  "description": "GB/GBC/GBA/SNES/NES/MD emulator in browser - PWA, offline ready, Netlify hosted",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0C",
+  "theme_color": "#0A0A0C",
+  "icons": []
+}

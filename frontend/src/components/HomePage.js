@@ -37,12 +37,28 @@ const PLATFORMS = [
     color: "#FACC15",
     desc: "16-bit S-CPU at 3.58 MHz. Snes9x core via EmulatorJS — no BIOS needed.",
   },
+  {
+    short: "NES",
+    name: "Nintendo Entertainment System",
+    year: "1983",
+    ext: ".nes/.fds",
+    color: "#EF4444",
+    desc: "8-bit 6502 CPU. fceumm core via EmulatorJS — optional disksys.rom for FDS.",
+  },
+  {
+    short: "MD",
+    name: "Sega Mega Drive",
+    year: "1988",
+    ext: ".md/.smd/.gen",
+    color: "#38BDF8",
+    desc: "16-bit 68000 + Z80. genesis_plus_gx core via EmulatorJS — no BIOS needed.",
+  },
 ];
 
 const FEATURES = [
   { icon: Zap, title: "Instant Play", desc: "Drop a ROM and play immediately — no installs or plugins needed." },
-  { icon: Cpu, title: "Multi-Core", desc: "mGBA, gambatte and snes9x cores via EmulatorJS (https://emulatorjs.org/docs/systems/snes)." },
-  { icon: Trophy, title: "Save States", desc: "Save and restore progress instantly — perfect for tough boss fights." },
+  { icon: Cpu, title: "Multi-Core", desc: "mGBA, gambatte, snes9x, fceumm, genesis_plus_gx via EmulatorJS (emulatorjs.org/docs/systems)." },
+  { icon: Trophy, title: "Save States", desc: "IndexedDB saves — survives refresh, exportable as JSON." },
   { icon: Monitor, title: "Full Screen", desc: "Expand to full screen, remap controls, adjust volume." },
 ];
 
@@ -56,8 +72,8 @@ export default function HomePage() {
     (file) => {
       if (!file) return;
       const ext = file.name.toLowerCase().split(".").pop();
-      if (!["gb", "gbc", "gba", "smc", "sfc", "fig", "snes", "bs", "zip"].includes(ext)) {
-        alert("Please upload a .gb, .gbc, .gba, .smc, .sfc, .snes, .fig or .zip ROM file");
+      if (!["gb", "gbc", "gba", "smc", "sfc", "fig", "snes", "bs", "nes", "fds", "unif", "unf", "md", "smd", "gen", "bin", "zip", "7z"].includes(ext)) {
+        alert("Please upload a .gb/.gbc/.gba/.smc/.sfc/.nes/.md/.zip ROM file");
         return;
       }
       loadRom(file);
@@ -89,19 +105,19 @@ export default function HomePage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 mb-6">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-emerald-400 text-sm font-medium">GB · GBC · GBA · SNES — All in your Browser</span>
+            <span className="text-emerald-400 text-sm font-medium">GB · GBC · GBA · SNES · NES · MD — All in your Browser</span>
           </div>
 
           <h1
             className="text-5xl sm:text-6xl lg:text-7xl font-black text-white mb-5 tracking-tighter leading-none"
             style={{ fontFamily: "Outfit, sans-serif" }}
           >
-            Play Any Game Boy
+            Play Any Retro
             <br />
-            <span className="text-emerald-400">or SNES Game</span>
+            <span className="text-emerald-400">Game Instantly</span>
           </h1>
           <p className="text-gray-400 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-            Upload a ROM file, play in your browser. Supports GB, GBC, GBA and SNES (.smc/.sfc) — snes9x core via EmulatorJS.
+            Upload a ROM, play in your browser. GB/GBC/GBA (mGBA/gambatte), SNES (snes9x), NES (fceumm), Mega Drive (genesis_plus_gx) via EmulatorJS.
           </p>
 
           {/* Drop Zone */}
@@ -119,7 +135,7 @@ export default function HomePage() {
             <p className="text-white font-semibold mb-1.5">Drop your ROM file here</p>
             <p className="text-gray-500 text-sm">or click to browse your files</p>
             <div className="flex items-center justify-center gap-2 mt-5 flex-wrap">
-              {[".gb", ".gbc", ".gba", ".smc", ".sfc", ".zip"].map((ext) => (
+              {[".gb", ".gbc", ".gba", ".smc", ".sfc", ".nes", ".md", ".zip"].map((ext) => (
                 <span key={ext} className="px-2.5 py-0.5 bg-gray-800/80 border border-gray-700 rounded text-gray-400 text-xs font-mono">
                   {ext}
                 </span>
@@ -128,7 +144,7 @@ export default function HomePage() {
             <input
               ref={fileRef}
               type="file"
-              accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.zip"
+              accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z"
               className="hidden"
               data-testid="rom-file-input"
               onChange={(e) => handleFile(e.target.files[0])}
@@ -140,9 +156,9 @@ export default function HomePage() {
       {/* Platforms */}
       <section className="max-w-5xl mx-auto px-4 pb-16">
         <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-gray-600 mb-8">
-          Supported Platforms
+          Supported Platforms (6)
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {PLATFORMS.map((p) => (
             <div
               key={p.short}
@@ -179,7 +195,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SNES CTA Banner */}
+      {/* Multi-Core CTA Banner */}
       <section className="max-w-5xl mx-auto px-4 pb-24">
         <div className="bg-gradient-to-r from-[#0F1A14] via-[#111A14] to-[#141417] border border-emerald-500/20 rounded-xl p-8 flex flex-col sm:flex-row items-center gap-6">
           <div className="w-14 h-14 bg-emerald-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -187,10 +203,10 @@ export default function HomePage() {
           </div>
           <div className="flex-1 text-center sm:text-left">
             <h3 className="text-white font-bold text-xl mb-1" style={{ fontFamily: "Outfit, sans-serif" }}>
-              Now with SNES Support
+              6 Systems, One Emulator
             </h3>
             <p className="text-gray-400 text-sm leading-relaxed">
-              snes9x core via EmulatorJS — same CDN, no BIOS needed. See docs at emulatorjs.org/docs/systems/snes
+              GB/GBC/GBA + SNES (snes9x) + NES (fceumm) + Mega Drive (genesis_plus_gx) — all via EmulatorJS CDN, no BIOS needed. Docs: emulatorjs.org/docs/systems
             </p>
           </div>
           <button
@@ -207,9 +223,9 @@ export default function HomePage() {
       <footer className="border-t border-white/5 py-8 text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Gamepad2 className="w-4 h-4 text-emerald-400" />
-          <span className="text-white font-semibold text-sm" style={{ fontFamily: "Outfit" }}>NuzlockeStudio</span>
+          <span className="text-white font-semibold text-sm" style={{ fontFamily: "Outfit" }}>Gavyn's Emulator</span>
         </div>
-        <p className="text-gray-700 text-xs">GB · GBC · GBA · SNES Emulation — Netlify Hosted</p>
+        <p className="text-gray-700 text-xs">GB · GBC · GBA · SNES · NES · MD Emulation — Netlify Hosted</p>
       </footer>
     </div>
   );
