@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Loader2, ChevronDown, ChevronUp, ArrowRight, Sword } from "lucide-react";
 import { TYPE_COLORS } from "../data/theme";
+import { fetchPoke, sprite } from "../lib/pokeProxy";
 
 // MOVES ROW
 function MoveRow({ moveName }) {
@@ -13,7 +14,7 @@ function MoveRow({ moveName }) {
     if (!data) {
       setLoading(true);
       try {
-        const res = await fetch(`https://pokeapi.co/api/v2/move/${moveName}`).then(r => r.json());
+        const res = await fetchPoke(`/move/${moveName}`).then(r => r.json());
         setData({
           type: res.type.name,
           power: res.power || "—",
@@ -64,7 +65,7 @@ function AbilityRow({ abilityName, isHidden }) {
     if (!effect) {
       setLoading(true);
       try {
-        const res = await fetch(`https://pokeapi.co/api/v2/ability/${abilityName}`).then(r => r.json());
+        const res = await fetchPoke(`/ability/${abilityName}`).then(r => r.json());
         const entry = res.effect_entries.find(e => e.language.name === "en")?.short_effect || "No info.";
         setEffect(entry);
         setOpen(true);
@@ -101,11 +102,11 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
   useEffect(() => {
     async function load() {
       try {
-        const p = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(r => r.json());
-        const s = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`).then(r => r.json());
+        const p = await fetchPoke(`/pokemon/${id}`).then(r => r.json());
+        const s = await fetchPoke(`/pokemon-species/${id}`).then(r => r.json());
         setPokemon(p);
         const evoId = s.evolution_chain.url.split("/").filter(Boolean).pop();
-        const eco = await fetch(`https://pokeapi.co/api/v2/evolution-chain/${evoId}`).then(r => r.json());
+        const eco = await fetchPoke(`/evolution-chain/${evoId}`).then(r => r.json());
         const chain = [];
         let curr = eco.chain;
         while(curr) {
@@ -124,8 +125,8 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
   const bst = pokemon.stats.reduce((total, s) => total + s.base_stat, 0);
   const calcStat = (base, isHP) => isMaxStats ? (isHP ? Math.floor(base * 2 + 31 + 63 + 110) : Math.floor(base * 2 + 31 + 63 + 5)) : base;
 
-  const normalImg = `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/${id}.png`;
-  const shinyImg = `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/shiny/${id}.png`;
+  const normalImg = sprite.cdnOfficial(id);
+  const shinyImg = sprite.cdnShiny(id);
 
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[200] flex items-center justify-center p-4" onClick={onClose}>
@@ -176,7 +177,7 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
                         {evoChain.map((evo, i) => (
                             <div key={evo.id} className="flex flex-col items-center">
                                 <button onClick={() => onJump(evo.id)} className={`w-full flex items-center gap-4 p-3 rounded-2xl border transition-all ${evo.id == id ? 'bg-emerald-600/20 border-emerald-500 text-white' : 'bg-white/5 border-white/5 text-gray-500 hover:bg-white/10'}`}>
-                                    <img src={`https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${evo.id}.png`} className="w-12 h-12 pixelated" alt={evo.name} />
+                                    <img src={sprite.tiny(evo.id)} className="w-12 h-12 pixelated" alt={evo.name} />
                                     <span className="capitalize text-sm font-black">{evo.name}</span>
                                 </button>
                                 {i < evoChain.length - 1 && <div className="py-1"><ArrowRight size={14} className="text-gray-800 rotate-90" /></div>}
@@ -229,11 +230,11 @@ export default function PokemonDetailsModal({ id, onClose, onJump }) {
             <div className="space-y-4 font-black">
               <div className="relative h-64 bg-[#141416] rounded-[2.5rem] border border-white/5 flex flex-col justify-end p-8 overflow-hidden">
                 <div className="absolute top-6 right-10 flex flex-col items-center text-center">
-                  <img src={isShiny ? `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/shiny/${id}.png` : `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${id}.png`} className="w-24 h-24 pixelated drop-shadow-2xl" alt="enemy" />
+                  <img src={isShiny ? sprite.shinyTiny(id) : sprite.tiny(id)} className="w-24 h-24 pixelated drop-shadow-2xl" alt="enemy" />
                   <div className="bg-black/80 px-3 py-1 rounded-full border border-white/10 text-[9px] text-white uppercase mt-2 shadow-lg tracking-widest">Enemy</div>
                 </div>
                 <div className="flex flex-col items-start mb-0">
-                  <img src={isShiny ? `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/back/shiny/${id}.png` : `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/back/${id}.png`} 
+                  <img src={isShiny ? sprite.backShiny(id) : sprite.back(id)} 
                        className="w-44 h-44 pixelated scale-[1.3] origin-bottom-left transition-transform -mb-8"
                        alt="yours" />
                   <div className="bg-emerald-600 px-3 py-1 rounded-full text-[9px] text-white uppercase tracking-widest shadow-xl relative z-20">Player</div>

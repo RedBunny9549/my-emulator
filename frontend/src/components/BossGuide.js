@@ -9,10 +9,10 @@ const GAME_LABELS = {
 };
 
 function getTrainerSprite(leader) {
-  if (!leader) return 'https://play.pokemonshowdown.com/sprites/trainers/red.png';
+  if (!leader) return '/showdown/sprites/trainers/red.png';
   let cleanName = leader.toLowerCase().replace(/\s+/g, "").replace("&", "and").replace(".", "");
   const map = { "blue": "blue", "championgary": "blue", "ltsurge": "ltsurge-gen3", "tateandliza": "tateandliza-gen3", "koga": "koga-gen2", "phoebe": "phoebe-gen3", "drake": "drake-gen3", "agatha": "agatha-gen3", "lorelei": "lorelei-gen3" };
-  return `https://play.pokemonshowdown.com/sprites/trainers/${map[cleanName] || cleanName}.png`;
+  return `/showdown/sprites/trainers/${map[cleanName] || cleanName}.png`;
 }
 
 // --- Interactive Item Row for Bosses ---
@@ -26,7 +26,7 @@ function ItemRow({ itemName }) {
       setLoading(true);
       try {
         const formattedName = itemName.toLowerCase().replace(/\s/g, "-");
-        const res = await fetch(`https://pokeapi.co/api/v2/item/${formattedName}`);
+        const res = await fetch(`/pokeapi/item/${formattedName}`);
         const json = await res.json();
         const effect = json.effect_entries?.find(e => e.language.name === "en")?.short_effect || json.flavor_text_entries?.find(e => e.language.name === "en")?.text || "No effect described.";
         setData(effect);
@@ -66,7 +66,7 @@ function AbilityRow({ abilityName }) {
       setLoading(true);
       try {
         const formattedName = abilityName.toLowerCase().replace(/\s/g, "-");
-        const res = await fetch(`https://pokeapi.co/api/v2/ability/${formattedName}`);
+        const res = await fetch(`/pokeapi/ability/${formattedName}`);
         const json = await res.json();
         const effect = json.effect_entries.find(e => e.language.name === "en")?.short_effect || "No description available.";
         setData(effect);
@@ -104,7 +104,7 @@ function MoveRow({ moveName }) {
     if (!open && !data) {
       setLoading(true);
       try {
-        const res = await fetch(`https://pokeapi.co/api/v2/move/${moveName}`);
+        const res = await fetch(`/pokeapi/move/${moveName}`);
         const json = await res.json();
         setData({
           type: json.type.name, category: json.damage_class.name, power: json.power || "-", acc: json.accuracy || "-", pp: json.pp,
@@ -148,7 +148,7 @@ function BossPokemonModal({ pokemon, onClose }) {
   }, []);
 
   useEffect(() => {
-    fetch(`https://pokeapi.co/api/v2/pokemon/${pokemon.name.toLowerCase()}`)
+    fetch(`/pokeapi/pokemon/${pokemon.name.toLowerCase()}`)
       .then(r => r.json()).then(d => setData(d)).catch(()=>{});
   }, [pokemon]);
 
@@ -168,7 +168,7 @@ function BossPokemonModal({ pokemon, onClose }) {
             <div className="relative">
                {/* Display Held Item Sprite next to the Pokemon if it has one */}
                {pokemon.item && (
-                 <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${pokemon.item}.png`} 
+                 <img src={`/sprites/items/${pokemon.item}.png`} 
                       className="absolute top-0 right-10 w-12 h-12 pixelated drop-shadow-md z-20" 
                       alt={pokemon.item} title={pokemon.item.replace("-", " ")} />
                )}
@@ -258,9 +258,9 @@ export default function BossGuide() {
                   {boss.team.map((p, i) => (
                     <button key={i} onClick={() => setSelectedPokemon(p)} className="flex flex-col items-center bg-[#0D0D10] hover:bg-emerald-500/10 transition-all cursor-pointer rounded-xl p-3 border border-white/5 shadow-sm relative">
                       {p.item && (
-                        <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${p.item}.png`} className="absolute -top-2 -right-2 w-6 h-6 pixelated z-10" alt="Held Item" title={p.item} />
+                        <img src={`/sprites/items/${p.item}.png`} className="absolute -top-2 -right-2 w-6 h-6 pixelated z-10" alt="Held Item" title={p.item} />
                       )}
-                      <img src={`https://img.pokemondb.net/sprites/emerald/normal/${p.name.toLowerCase()}.png`} className="w-10 h-10 pixelated drop-shadow-md mb-2" title={p.name} onError={(e) => e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'} />
+                      <img src={`/pokemondb/sprites/emerald/normal/${p.name.toLowerCase()}.png`} className="w-10 h-10 pixelated drop-shadow-md mb-2" title={p.name} onError={(e) => e.target.src = '/sprites/items/poke-ball.png'} />
                       <span className="text-[10px] text-gray-400 font-black font-mono">LV.{p.level}</span>
                     </button>
                   ))}

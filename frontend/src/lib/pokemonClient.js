@@ -12,11 +12,11 @@ export const api = {
   // Helper to bypass school filters for any sprite
   getSprite: (id, type = 'official') => {
     if (type === 'shiny') {
-      return `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/shiny/${id}.png`;
+      return `/cdn-sprites/pokemon/other/official-artwork/shiny/${id}.png`;
     }
     if (type === 'icon') {
-      return `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/versions/generation-viii/icons/${id}.png`;
+      return `/cdn-sprites/pokemon/versions/generation-viii/icons/${id}.png`;
     }
-    return `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/${id}.png`;
+    return `/cdn-sprites/pokemon/other/official-artwork/${id}.png`;
   }
 };

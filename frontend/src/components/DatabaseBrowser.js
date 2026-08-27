@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, Loader2, Database, Filter } from "lucide-react";
+import { proxiedUrl } from "../lib/pokeProxy";
 
 const MOVE_TYPES = ["normal", "fire", "water", "grass", "electric", "ice", "fighting", "poison", "ground", "flying", "psychic", "bug", "rock", "ghost", "dark", "dragon", "steel", "fairy"];
 const ITEM_CATEGORIES = ["healing", "status-cures", "revival", "pp-recovery", "stat-boosts", "evolution", "standard-balls", "special-balls", "held-items", "choice", "effort-training", "plates", "species-specific", "type-enhancement", "mega-stones"];
@@ -26,20 +27,20 @@ export default function DatabaseBrowser() {
         
         // Filter Logic for Moves
         if (tab === "moves" && filterType !== "all") {
-          const res = await fetch(`https://pokeapi.co/api/v2/type/${filterType}`);
+          const res = await fetch(`/pokeapi/type/${filterType}`);
           const data = await res.json();
           results = data.moves || []; // Fixed: PokeAPI already returns an array of {name, url}
         } 
         // Filter Logic for Items
         else if (tab === "items" && filterCategory !== "all") {
-          const res = await fetch(`https://pokeapi.co/api/v2/item-category/${filterCategory}`);
+          const res = await fetch(`/pokeapi/item-category/${filterCategory}`);
           const data = await res.json();
           results = data.items || []; // Fixed: PokeAPI already returns an array of {name, url}
         } 
         // Standard full list fetching
         else {
           const endpoint = tab === "moves" ? "move" : tab === "abilities" ? "ability" : "item";
-          const res = await fetch(`https://pokeapi.co/api/v2/${endpoint}?limit=2000`);
+          const res = await fetch(`/pokeapi/${endpoint}?limit=2000`);
           const data = await res.json();
           results = data.results || [];
         }
@@ -61,7 +62,9 @@ export default function DatabaseBrowser() {
   const loadDetails = async (url) => {
     setSelected(null);
     try {
-      const res = await fetch(url);
+      // proxy pokeapi URLs to bypass school firewall
+      const proxied = url.replace("https://pokeapi.co/api/v2", "/pokeapi");
+      const res = await fetch(proxied);
       if (!res.ok) throw new Error("API request failed");
       const data = await res.json();
       setSelected(data);
@@ -142,7 +145,7 @@ export default function DatabaseBrowser() {
           {selected ? (
             <div className="bg-[#16161A] border border-white/5 rounded-3xl p-6 shadow-xl sticky top-20">
               {tab === "items" && selected.sprites?.default && (
-                <img src={selected.sprites.default} className="w-16 h-16 drop-shadow-md pixelated mb-4" alt={selected.name} />
+                <img src={proxiedUrl(selected.sprites.default)} className="w-16 h-16 drop-shadow-md pixelated mb-4" alt={selected.name} />
               )}
               <h2 className="text-3xl font-black text-white capitalize mb-2">{selected.name.replace(/-/g, " ")}</h2>
               

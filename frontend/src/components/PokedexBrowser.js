@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, Loader2 } from "lucide-react";
 import PokemonDetailsModal from "./PokemonDetailsModal";
+import { fetchPoke, sprite } from "../lib/pokeProxy";
 
 export default function PokedexBrowser() {
   const [pokemonList, setPokemonList] = useState([]);
@@ -13,14 +14,14 @@ export default function PokedexBrowser() {
     async function fetchPokedex() {
       try {
         setLoading(true);
-        const response = await fetch("https://pokeapi.co/api/v2/pokemon?limit=1025");
+        const response = await fetchPoke("/pokemon?limit=1025");
         const data = await response.json();
         const formatted = data.results.map((p, index) => {
           const id = index + 1;
           return {
             name: p.name,
             id: id,
-            image: `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/${id}.png`
+            image: sprite.cdnOfficial(id)
           };
         });
         setPokemonList(formatted);

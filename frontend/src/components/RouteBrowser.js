@@ -6,7 +6,7 @@ function RoutePokemonDetail({ name, onClose }) {
   const [data, setData] = useState(null);
   useEffect(() => {
     const key = name.toLowerCase().replace(/[♀♂\s]/g,"-");
-    fetch(`https://pokeapi.co/api/v2/pokemon/${key}`)
+    fetch(`/pokeapi/pokemon/${key}`)
       .then(r => r.json()).then(p => setData(p)).catch(()=>{});
   }, [name]);
 
@@ -90,7 +90,7 @@ export default function RouteBrowser() {
                 <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 bg-black/20 border-t border-white/5">
                   {pokemon.map(p => (
                     <button key={p} onClick={() => setSelected(p)} className="flex flex-col items-center bg-[#0D0D10] p-3 rounded-xl border border-white/5 hover:border-emerald-500/50 transition-colors">
-                      <img src={`https://img.pokemondb.net/sprites/emerald/normal/${p.toLowerCase().replace(/\s/g, '-')}.png`} className="w-12 h-12 pixelated" alt={p} onError={(e) => e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'} />
+                      <img src={`/pokemondb/sprites/emerald/normal/${p.toLowerCase().replace(/\s/g, '-')}.png`} className="w-12 h-12 pixelated" alt={p} onError={(e) => e.target.src = '/sprites/items/poke-ball.png'} />
                       <span className="text-[10px] font-bold capitalize mt-2 text-gray-400">{p}</span>
                     </button>
                   ))}

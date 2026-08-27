@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
+import { proxiedUrl } from "../lib/pokeProxy";
 
 // Module-level cache — survives re-renders, cleared on page refresh
 const pokeCache = {};
@@ -45,14 +46,14 @@ export default function PokemonSprite({ name, size = 56, showTypes = false }) {
       setData(pokeCache[key]);
       return;
     }
-    fetch(`https://pokeapi.co/api/v2/pokemon/${key}`)
+    fetch(`/pokeapi/pokemon/${key}`)
       .then((r) => {
         if (!r.ok) throw new Error("not found");
         return r.json();
       })
       .then((res) => {
         const entry = {
-          sprite: res.sprites.front_default,
+          sprite: proxiedUrl(res.sprites.front_default),
           types: res.types.map((t) => t.type.name),
         };
         pokeCache[key] = entry;

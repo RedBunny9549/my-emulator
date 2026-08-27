@@ -17,6 +17,49 @@
     Content-Type = "application/manifest+json"
     Cache-Control = "public, max-age=86400"
 
+# Proxy PokeAPI + sprites through same origin to bypass school firewall (client only talks to braydenthingy.netlify.app)
+[[redirects]]
+  from = "/pokeapi/*"
+  to = "https://pokeapi.co/api/v2/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/sprites/*"
+  to = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/cdn-sprites/*"
+  to = "https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/pokemondb/*"
+  to = "https://img.pokemondb.net/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/showdown/*"
+  to = "https://play.pokemonshowdown.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/emulator-cdn/*"
+  to = "https://cdn.emulatorjs.org/stable/data/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/emulator-bios/*"
+  to = "https://customer-assets.emergentagent.com/:splat"
+  status = 200
+  force = true
+
 [[redirects]]
   # This is CRITICAL for React Router. It ensures that if a user goes directly
   # to yoursite.com/pokedex, Netlify doesn't throw a 404 error.

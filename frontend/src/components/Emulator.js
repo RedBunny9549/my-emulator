@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 
-const GBA_BIOS_URL =
-  "https://customer-assets.emergentagent.com/job_nuzlocke-scanner/artifacts/gibis365_gba_bios_romsretro.com.bin";
+const GBA_BIOS_URL = "/emulator-bios/job_nuzlocke-scanner/artifacts/gibis365_gba_bios_romsretro.com.bin";
 
 // EmulatorJS core names — per https://emulatorjs.org/docs
 // snes -> snes9x/bsnes, nes -> fceumm/nestopia, segaMD -> genesis_plus_gx
@@ -65,7 +64,7 @@ export default function Emulator({ romFile, biosFile, coreOverride }) {
     window.EJS_startOnLoaded = true;
     window.EJS_color = "#10B981";
     window.EJS_backgroundColor = "#000000";
-    window.EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
+    window.EJS_pathtodata = "/emulator-cdn/";
     window.EJS_volume = 0.7;
     window.EJS_Buttons = {
       playPause: true, restart: true, mute: true,
@@ -96,7 +95,7 @@ export default function Emulator({ romFile, biosFile, coreOverride }) {
 
     const script = document.createElement("script");
     script.id = "emulatorjs-loader";
-    script.src = "https://cdn.emulatorjs.org/stable/data/loader.js";
+    script.src = "/emulator-cdn/loader.js";
     document.body.appendChild(script);
 
     return () => {
