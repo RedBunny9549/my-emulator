@@ -243,6 +243,22 @@ export default function PlayPage() {
                  </select>
                </div>
                <div className="bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
+                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">GBA BIOS (optional)</h4>
+                 <p className="text-[10px] text-gray-600 mb-2">GBA works with HLE BIOS, but real BIOS improves accuracy. Provide your own file (not included for copyright).</p>
+                 {biosFile ? (
+                   <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+                     <span className="text-xs text-emerald-400 truncate">{biosFile.name}</span>
+                     <button onClick={()=>setBiosFile(null)} className="text-xs text-red-400 hover:text-red-300 ml-2">Remove</button>
+                   </div>
+                 ) : (
+                   <label className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-300 cursor-pointer">
+                     <Upload className="w-4 h-4" /> Upload GBA BIOS (.bin)
+                     <input type="file" accept=".bin" className="hidden" onChange={(e)=>{const f=e.target.files[0]; if(f){setBiosFile(f); setEmuKey(k=>k+1);} e.target.value="";}} />
+                   </label>
+                 )}
+                 {!biosFile && <p className="text-[10px] text-gray-700 mt-1">Fallback: remote BIOS from emergentagent.com or HLE if blocked.</p>}
+               </div>
+               <div className="bg-[#0D0D10] border border-white/5 p-3 rounded-xl">
                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Controls</h4>
                  <p className="text-[10px] text-gray-500 leading-relaxed">
                    EmulatorJS handles gamepad + keyboard. In-game menu: fullscreen, save/load, volume. Gamepad auto-detected. See docs: emulatorjs.org/docs/options + emulatorjs.org/docs4devs/control-mapping
