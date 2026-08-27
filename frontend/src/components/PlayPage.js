@@ -148,10 +148,10 @@ export default function PlayPage() {
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">No ROM Loaded</h2>
         <p className="text-gray-500 mb-8 text-center">Upload a .gb, .gbc, .gba, .smc, .sfc or .zip ROM file</p>
-        <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z,.GB,.GBC,.GBA" className="sr-only" style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }} onChange={handleRomChange} />
-        <button onClick={() => romRef.current?.click()} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-lg font-semibold transition-all">
+        <label htmlFor="rom-file-input" className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-lg font-semibold transition-all cursor-pointer">
           <Upload className="w-5 h-5" /> Load ROM File
-        </button>
+          <input id="rom-file-input" type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z,.GB,.GBC,.GBA" className="sr-only" style={{ position: 'absolute', left: '-9999px', opacity: 0 }} onChange={handleRomChange} />
+        </label>
       </div>
     );
   }
@@ -264,10 +264,10 @@ export default function PlayPage() {
                    EmulatorJS handles gamepad + keyboard. In-game menu: fullscreen, save/load, volume. Gamepad auto-detected. See docs: emulatorjs.org/docs/options + emulatorjs.org/docs4devs/control-mapping
                  </p>
                </div>
-               <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z,.GB,.GBC,.GBA" className="sr-only" style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }} onChange={handleRomChange} />
-               <button onClick={() => romRef.current?.click()} className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors">
+               <label htmlFor="rom-file-input-2" className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors cursor-pointer">
                  <FileUp className="w-5 h-5" /> Change ROM File
-               </button>
+                 <input id="rom-file-input-2" type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z,.GB,.GBC,.GBA" className="sr-only" style={{ position: 'absolute', left: '-9999px', opacity: 0 }} onChange={handleRomChange} />
+               </label>
             </div>
           </div>
         </div>

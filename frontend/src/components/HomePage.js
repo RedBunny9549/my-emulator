@@ -121,12 +121,12 @@ export default function HomePage() {
           </p>
 
           {/* Drop Zone */}
-          <div
+          <label
+            htmlFor="home-rom-input"
             data-testid="rom-drop-zone"
-            className={`relative border-2 border-dashed rounded-xl p-12 mx-auto max-w-lg cursor-pointer transition-all duration-200 ${
+            className={`relative border-2 border-dashed rounded-xl p-12 mx-auto max-w-lg cursor-pointer transition-all duration-200 block ${
               dragging ? "border-emerald-400 bg-emerald-500/5" : "border-gray-700 hover:border-gray-500 hover:bg-white/[0.015]"
             }`}
-            onClick={() => fileRef.current?.click()}
             onDrop={onDrop}
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
@@ -143,13 +143,15 @@ export default function HomePage() {
             </div>
             <input
               ref={fileRef}
+              id="home-rom-input"
               type="file"
               accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z,.GB,.GBC,.GBA"
               className="sr-only"
-              style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }}
+              style={{ position: 'absolute', left: '-9999px', opacity: 0 }}
               data-testid="rom-file-input"
               onChange={(e) => handleFile(e.target.files[0])}
             />
+            </label>
           </div>
         </div>
       </section>

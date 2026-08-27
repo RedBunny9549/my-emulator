@@ -38,11 +38,11 @@ export default function Navbar() {
               </Link>
             ))}
           </div>
-          <input ref={fileRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z,.GB,.GBC,.GBA" className="sr-only" style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }} onChange={handleFileChange} />
-          <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all flex-shrink-0">
+          <input ref={fileRef} id="nav-rom-input" type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.nes,.fds,.md,.smd,.gen,.bin,.zip,.7z,.GB,.GBC,.GBA" className="sr-only" style={{ position: 'absolute', left: '-9999px', opacity: 0 }} onChange={handleFileChange} />
+          <label htmlFor="nav-rom-input" className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all flex-shrink-0 cursor-pointer">
             <Upload className="w-4 h-4" />
             <span className="hidden sm:inline">Load ROM</span>
-          </button>
+          </label>
         </div>
       </div>
     </nav>
