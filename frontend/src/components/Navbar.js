@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Gamepad2, Library, Upload, BookOpen, Map, BookMarked, LayoutGrid, Database } from "lucide-react";
+import { Gamepad2, Upload, BookOpen, Map, BookMarked, LayoutGrid, Database } from "lucide-react";
 import { useRef } from "react";
 import { useEmu } from "../App";
 
@@ -17,7 +17,6 @@ export default function Navbar() {
 
   const links = [
     { to: "/play",     icon: Gamepad2,   label: "Play"     },
-    { to: "/library",  icon: Library,    label: "Library"  },
     { to: "/routes",   icon: Map,        label: "Routes"   },
     { to: "/pokedex",  icon: BookMarked, label: "Pokédex"  },
     { to: "/coverage", icon: LayoutGrid, label: "Coverage" },
@@ -39,7 +38,7 @@ export default function Navbar() {
               </Link>
             ))}
           </div>
-          <input ref={fileRef} type="file" accept=".gb,.gbc,.gba" className="hidden" onChange={handleFileChange} />
+          <input ref={fileRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.zip" className="hidden" onChange={handleFileChange} />
           <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all flex-shrink-0">
             <Upload className="w-4 h-4" />
             <span className="hidden sm:inline">Load ROM</span>

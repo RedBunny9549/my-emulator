@@ -2,7 +2,6 @@ import { useState, createContext, useContext } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "@/App.css";
 import PlayPage from "./components/PlayPage";
-import LibraryPage from "./components/LibraryPage";
 import BossGuide from "./components/BossGuide";
 import RouteBrowser from "./components/RouteBrowser";
 import PokedexBrowser from "./components/PokedexBrowser";
@@ -21,18 +20,14 @@ function App() {
 
   const loadRom = (file) => {
     const ext = file.name.toLowerCase().split(".").pop();
-    const core = (ext === "gbc" || ext === "gb") ? "gambatte" : "mgba";
+    let core = "snes";
+    if (ext === "gbc" || ext === "gb") core = "gambatte";
+    else if (ext === "gba") core = "gba";
+    else if (["sfc","smc","fig","snes","bs"].includes(ext)) core = "snes";
+    else if (ext === "zip") core = "snes"; // zip may contain snes or gba — emulatorjs auto-detects
     setRomFile(file);
     setCoreType(core);
     setGameTitle(file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " "));
-    // Persist history for LibraryPage (metadata only — browser cannot store ROM binary due to size limits)
-    try {
-      const entry = { name: file.name, size: file.size, lastPlayed: new Date().toISOString(), core };
-      const stored = JSON.parse(localStorage.getItem("recent_roms") || "[]");
-      const filtered = stored.filter((r) => r.name !== file.name);
-      filtered.unshift(entry);
-      localStorage.setItem("recent_roms", JSON.stringify(filtered.slice(0, 20)));
-    } catch (_) {}
   };
 
   return (
@@ -44,7 +39,6 @@ function App() {
             <Routes>
               <Route path="/"            element={<Navigate to="/play" replace />} />
               <Route path="/play"        element={<PlayPage />} />
-              <Route path="/library"     element={<LibraryPage />} />
               <Route path="/bosses"      element={<BossGuide />} />
               <Route path="/routes"      element={<RouteBrowser />} />
               <Route path="/pokedex"     element={<PokedexBrowser />} />

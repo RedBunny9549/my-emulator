@@ -27,13 +27,21 @@ const PLATFORMS = [
     year: "2001",
     ext: ".gba",
     color: "#F472B6",
-    desc: "ARM7TDMI CPU, 32-bit, 240×160 resolution. Radical Red, Emerald & more.",
+    desc: "ARM7TDMI CPU, 32-bit, 240x160 resolution. Radical Red, Emerald & more.",
+  },
+  {
+    short: "SNES",
+    name: "Super Nintendo",
+    year: "1990",
+    ext: ".smc/.sfc/.fig",
+    color: "#FACC15",
+    desc: "16-bit S-CPU at 3.58 MHz. Snes9x core via EmulatorJS — no BIOS needed.",
   },
 ];
 
 const FEATURES = [
   { icon: Zap, title: "Instant Play", desc: "Drop a ROM and play immediately — no installs or plugins needed." },
-  { icon: Cpu, title: "Cycle-Accurate", desc: "EmulatorJS mGBA core for accurate GBA emulation with save states." },
+  { icon: Cpu, title: "Multi-Core", desc: "mGBA, gambatte and snes9x cores via EmulatorJS (https://emulatorjs.org/docs/systems/snes)." },
   { icon: Trophy, title: "Save States", desc: "Save and restore progress instantly — perfect for tough boss fights." },
   { icon: Monitor, title: "Full Screen", desc: "Expand to full screen, remap controls, adjust volume." },
 ];
@@ -48,8 +56,8 @@ export default function HomePage() {
     (file) => {
       if (!file) return;
       const ext = file.name.toLowerCase().split(".").pop();
-      if (!["gb", "gbc", "gba"].includes(ext)) {
-        alert("Please upload a .gb, .gbc, or .gba ROM file");
+      if (!["gb", "gbc", "gba", "smc", "sfc", "fig", "snes", "bs", "zip"].includes(ext)) {
+        alert("Please upload a .gb, .gbc, .gba, .smc, .sfc, .snes, .fig or .zip ROM file");
         return;
       }
       loadRom(file);
@@ -81,7 +89,7 @@ export default function HomePage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 mb-6">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-emerald-400 text-sm font-medium">GB · GBC · GBA — All in your Browser</span>
+            <span className="text-emerald-400 text-sm font-medium">GB · GBC · GBA · SNES — All in your Browser</span>
           </div>
 
           <h1
@@ -90,10 +98,10 @@ export default function HomePage() {
           >
             Play Any Game Boy
             <br />
-            <span className="text-emerald-400">Game Instantly</span>
+            <span className="text-emerald-400">or SNES Game</span>
           </h1>
           <p className="text-gray-400 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-            Upload a ROM file, play in your browser. Supports Emerald, FireRed, Crystal, and any GB/GBC/GBA game.
+            Upload a ROM file, play in your browser. Supports GB, GBC, GBA and SNES (.smc/.sfc) — snes9x core via EmulatorJS.
           </p>
 
           {/* Drop Zone */}
@@ -110,8 +118,8 @@ export default function HomePage() {
             <Upload className={`w-10 h-10 mx-auto mb-4 transition-colors ${dragging ? "text-emerald-400" : "text-gray-600"}`} />
             <p className="text-white font-semibold mb-1.5">Drop your ROM file here</p>
             <p className="text-gray-500 text-sm">or click to browse your files</p>
-            <div className="flex items-center justify-center gap-2 mt-5">
-              {[".gb", ".gbc", ".gba"].map((ext) => (
+            <div className="flex items-center justify-center gap-2 mt-5 flex-wrap">
+              {[".gb", ".gbc", ".gba", ".smc", ".sfc", ".zip"].map((ext) => (
                 <span key={ext} className="px-2.5 py-0.5 bg-gray-800/80 border border-gray-700 rounded text-gray-400 text-xs font-mono">
                   {ext}
                 </span>
@@ -120,7 +128,7 @@ export default function HomePage() {
             <input
               ref={fileRef}
               type="file"
-              accept=".gb,.gbc,.gba"
+              accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.zip"
               className="hidden"
               data-testid="rom-file-input"
               onChange={(e) => handleFile(e.target.files[0])}
@@ -134,7 +142,7 @@ export default function HomePage() {
         <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-gray-600 mb-8">
           Supported Platforms
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {PLATFORMS.map((p) => (
             <div
               key={p.short}
@@ -171,7 +179,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Library CTA Banner */}
+      {/* SNES CTA Banner */}
       <section className="max-w-5xl mx-auto px-4 pb-24">
         <div className="bg-gradient-to-r from-[#0F1A14] via-[#111A14] to-[#141417] border border-emerald-500/20 rounded-xl p-8 flex flex-col sm:flex-row items-center gap-6">
           <div className="w-14 h-14 bg-emerald-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -179,18 +187,18 @@ export default function HomePage() {
           </div>
           <div className="flex-1 text-center sm:text-left">
             <h3 className="text-white font-bold text-xl mb-1" style={{ fontFamily: "Outfit, sans-serif" }}>
-              Your Game Library
+              Now with SNES Support
             </h3>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Recently played ROMs, boss guides, Pokédex, and type coverage — all in one place.
+              snes9x core via EmulatorJS — same CDN, no BIOS needed. See docs at emulatorjs.org/docs/systems/snes
             </p>
           </div>
           <button
-            onClick={() => navigate("/library")}
-            data-testid="library-cta-btn"
+            onClick={() => navigate("/play")}
+            data-testid="snes-cta-btn"
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex-shrink-0"
           >
-            Browse Library <ArrowRight className="w-4 h-4" />
+            Play Now <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </section>
@@ -201,7 +209,7 @@ export default function HomePage() {
           <Gamepad2 className="w-4 h-4 text-emerald-400" />
           <span className="text-white font-semibold text-sm" style={{ fontFamily: "Outfit" }}>NuzlockeStudio</span>
         </div>
-        <p className="text-gray-700 text-xs">GB · GBC · GBA Emulation — Netlify Hosted</p>
+        <p className="text-gray-700 text-xs">GB · GBC · GBA · SNES Emulation — Netlify Hosted</p>
       </footer>
     </div>
   );

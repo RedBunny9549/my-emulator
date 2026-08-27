@@ -3,13 +3,14 @@ import { useEffect, useRef } from "react";
 const GBA_BIOS_URL =
   "https://customer-assets.emergentagent.com/job_nuzlocke-scanner/artifacts/gibis365_gba_bios_romsretro.com.bin";
 
-// EmulatorJS core names — gambatte handles both GB and GBC
+// EmulatorJS core names — per https://emulatorjs.org/docs/systems/snes (snes -> snes9x, bsnes)
 function detectCore(filename) {
   const ext = filename.toLowerCase().split(".").pop();
   if (ext === "gba") return "gba";
   if (ext === "gbc") return "gambatte";
   if (ext === "gb")  return "gambatte";
-  return "gambatte";
+  if (ext === "sfc" || ext === "smc" || ext === "fig" || ext === "snes" || ext === "bs") return "snes";
+  return "snes";
 }
 
 // Hide the EmulatorJS "Powered by" badge via injected CSS

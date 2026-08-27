@@ -1,9 +1,8 @@
-# Gavyn's Emulator — GB/GBC/GBA in Browser (Netlify Static)
+# Gavyn's Emulator — GB/GBC/GBA/SNES in Browser (Netlify Static)
 
-Static frontend hosted on Netlify. No backend required.
+Static frontend hosted on Netlify. No backend required. EmulatorJS docs: https://emulatorjs.org/docs/systems/snes (snes -> snes9x)
 
-- **Play** — Upload `.gb/.gbc/.gba` ROMs, EmulatorJS (mGBA/gambatte) via `https://cdn.emulatorjs.org/stable/data/loader.js`
-- **Library** — Recent ROMs (metadata in localStorage, re-upload required — browser cannot store ROM binaries)
+- **Play** — Upload `.gb/.gbc/.gba/.smc/.sfc/.snes/.fig/.zip` ROMs, EmulatorJS (mGBA/gambatte/snes9x via `https://cdn.emulatorjs.org/stable/data/loader.js`, `EJS_core = snes` defaults to snes9x)
 - **Boss Guide / Routes / Pokedex / Coverage / Database** — Static Pokemon data + PokeAPI
 
 ## Deploy (Netlify)
@@ -27,5 +26,6 @@ ROMs and GBA BIOS are copyrighted. Provide your own files. No ROMs/BIOS included
 
 ## Removed
 
-Nuzlocke Tracker scrapped (deleted `NuzlockeList`, `NuzlockeRunPage`, `RouteTracker`, `RunTimeline`, `levelCaps`, nuzlocke API).
+Nuzlocke Tracker + Library scrapped (deleted `NuzlockeList`, `NuzlockeRunPage`, `RouteTracker`, `RunTimeline`, `LibraryPage`, `levelCaps`, nuzlocke API).
 Vercel config removed, Netlify only.
+SNES added (snes9x, no BIOS, `EJS_core=snes` per https://emulatorjs.org/docs/systems/snes).

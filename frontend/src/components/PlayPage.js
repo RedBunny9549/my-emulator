@@ -147,8 +147,8 @@ export default function PlayPage() {
           <Gamepad2 className="w-8 h-8 text-gray-600" />
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">No ROM Loaded</h2>
-        <p className="text-gray-500 mb-8 text-center">Upload a .gb, .gbc, or .gba ROM file</p>
-        <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.zip" className="hidden" onChange={handleRomChange} />
+        <p className="text-gray-500 mb-8 text-center">Upload a .gb, .gbc, .gba, .smc, .sfc or .zip ROM file</p>
+        <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.zip" className="hidden" onChange={handleRomChange} />
         <button onClick={() => romRef.current?.click()} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-lg font-semibold transition-all">
           <Upload className="w-5 h-5" /> Load ROM File
         </button>
@@ -231,7 +231,7 @@ export default function PlayPage() {
             </div>
 
             <div className="space-y-2 pt-4 border-t border-white/5">
-               <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.zip" className="hidden" onChange={handleRomChange} />
+               <input ref={romRef} type="file" accept=".gb,.gbc,.gba,.smc,.sfc,.snes,.fig,.bs,.zip" className="hidden" onChange={handleRomChange} />
                <button onClick={() => romRef.current?.click()} className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors">
                  <FileUp className="w-5 h-5" /> Change ROM File
                </button>
